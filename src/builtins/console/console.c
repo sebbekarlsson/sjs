@@ -1,5 +1,4 @@
 #include <js/builtins/console/console.h>
-#include <js/builtins/utils.h>
 #include <stdint.h>
 
 static void *builtin_console_log(list_T *args, map_T *stack) {
