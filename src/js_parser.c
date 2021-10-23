@@ -80,6 +80,48 @@ JSAST *js_parser_parse_function(JSParser *parser) {
   return ast;
 }
 
+void js_parser_parse_object_row(JSParser *parser, JSASTTuple *tuple) {
+  JSASTTuple tup = *tuple;
+  JSAST *keyast = js_parser_parse_factor(parser);
+  JSAST *valueast = 0;
+  if (parser->token->type == TOKEN_COLON) {
+    js_parser_eat(parser, TOKEN_COLON);
+    valueast = js_parser_parse_expr(parser);
+  }
+
+  tup.x = keyast;
+  tup.y = valueast;
+
+  *tuple = tup;
+}
+
+JSAST *js_parser_parse_object(JSParser *parser) {
+  JSAST *ast = init_js_ast(JS_AST_OBJECT);
+  js_parser_eat(parser, TOKEN_LBRACE);
+  if (parser->token->type != TOKEN_RBRACE) {
+    JSASTTuple tuple = (JSASTTuple){0, 0};
+    js_parser_parse_object_row(parser, &tuple);
+    char *tstr = js_ast_str_value(tuple.x);
+    if (tstr != 0) {
+      map_set(ast->keyvalue, tstr, tuple.y);
+      free(tstr);
+    }
+    while (parser->token->type == TOKEN_COMMA) {
+      js_parser_eat(parser, TOKEN_COMMA);
+      tuple = (JSASTTuple){0, 0};
+      js_parser_parse_object_row(parser, &tuple);
+      char *tstr = js_ast_str_value(tuple.x);
+      if (tstr != 0) {
+        map_set(ast->keyvalue, tstr, tuple.y);
+        free(tstr);
+      }
+    }
+  }
+  js_parser_eat(parser, TOKEN_RBRACE);
+
+  return ast;
+}
+
 JSAST *js_parser_parse_if(JSParser *parser) {
 
   JSAST *ast = init_js_ast(JS_AST_IF);
@@ -128,6 +170,9 @@ JSAST *js_parser_parse_for(JSParser *parser) {
 }
 
 JSAST *js_parser_parse_factor(JSParser *parser) {
+  if (parser->token->type == TOKEN_LBRACE) {
+    return js_parser_parse_object(parser);
+  }
   if (parser->token->type == TOKEN_LPAREN) {
     js_parser_eat(parser, TOKEN_LPAREN);
     JSAST *ast = 0;

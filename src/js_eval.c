@@ -226,7 +226,24 @@ JSAST *js_eval_definition(JSAST *ast, map_T *stack) {
   return value;
 }
 JSAST *js_eval_assignment(JSAST *ast, map_T *stack) {
-  return js_eval_definition(ast, stack);
+  JSAST *left = js_eval(ast->left, stack);
+  if (left->type == JS_AST_ID)
+    return; // never want to modify ID.
+
+  JSAST *right = js_eval(ast->right, stack);
+
+  if (left->value_str != 0 && right->value_str != 0) {
+    free(left->value_str);
+    left->value_str = 0;
+    left->value_str = strdup(right->value_str);
+  }
+
+  left->value_int = right->value_int;
+  left->value_num = right->value_num;
+
+  return right;
+
+  // return js_eval_definition(ast, stack);
 }
 
 JSAST *js_eval_binop(JSAST *ast, map_T *stack) {

@@ -23,8 +23,12 @@ typedef struct JS_AST_STRUCT {
   JSFunction *fptr;
   unsigned int is_result;
   unsigned int is_true;
-
 } JSAST;
+
+typedef struct JS_AST_TUPLE_STRUCT {
+  JSAST *x;
+  JSAST *y;
+} JSASTTuple;
 
 JSAST *init_js_ast(JSASTType type);
 
