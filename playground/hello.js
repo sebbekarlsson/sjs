@@ -1,8 +1,5 @@
-console.log("hello world");
-console.log(123);
-
-function bepa() {
-
+function hello() {
+  console.log("hello");
 }
 
-const x = (yo) => yo * 33;
+hello();

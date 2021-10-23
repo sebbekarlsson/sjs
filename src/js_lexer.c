@@ -7,6 +7,92 @@
 #include <string.h>
 #include <stdlib.h>
 
+static JSToken* modify_token(JSToken* token) {
+  if (token == 0) return token;
+  if (token->value == 0) return token;
+
+  if (strcmp(token->value, "if") == 0)
+    token->type = TOKEN_IF;
+  else if (strcmp(token->value, "else") == 0)
+    token->type = TOKEN_ELSE;
+  else if (strcmp(token->value, "while") == 0)
+    token->type = TOKEN_WHILE;
+  else if (strcmp(token->value, "for") == 0)
+    token->type = TOKEN_FOR;
+  else if (strcmp(token->value, "return") == 0)
+    token->type = TOKEN_RETURN;
+  else if (strcmp(token->value, "new") == 0)
+    token->type = TOKEN_NEW;
+  else if (strcmp(token->value, "import") == 0)
+    token->type = TOKEN_IMPORT;
+  else if (strcmp(token->value, "export") == 0)
+    token->type = TOKEN_EXPORT;
+  else if (strcmp(token->value, "default") == 0)
+    token->type = TOKEN_DEFAULT;
+  else if (strcmp(token->value, "from") == 0)
+    token->type = TOKEN_FROM;
+  else if (strcmp(token->value, "as") == 0)
+    token->type = TOKEN_AS;
+  else if (strcmp(token->value, "const") == 0)
+    token->type = TOKEN_CONST;
+  else if (strcmp(token->value, "let") == 0)
+    token->type = TOKEN_LET;
+  else if (strcmp(token->value, "var") == 0)
+    token->type = TOKEN_VAR;
+  else if (strcmp(token->value, "function") == 0)
+    token->type = TOKEN_FUNCTION;
+  else if (strcmp(token->value, "interface") == 0)
+    token->type = TOKEN_INTERFACE;
+  else if (strcmp(token->value, "try") == 0)
+    token->type = TOKEN_TRY;
+  else if (strcmp(token->value, "catch") == 0)
+    token->type = TOKEN_CATCH;
+  else if (strcmp(token->value, "finally") == 0)
+    token->type = TOKEN_FINALLY;
+  else if (strcmp(token->value, "finally") == 0)
+    token->type = TOKEN_CATCH;
+  else if (strcmp(token->value, "throw") == 0)
+    token->type = TOKEN_THROW;
+  else if (strcmp(token->value, "typeof") == 0)
+    token->type = TOKEN_TYPEOF;
+  else if (strcmp(token->value, "in") == 0)
+    token->type = TOKEN_IN;
+  else if (strcmp(token->value, "of") == 0)
+    token->type = TOKEN_OF;
+  else if (strcmp(token->value, "do") == 0)
+    token->type = TOKEN_DO;
+  else if (strcmp(token->value, "switch") == 0)
+    token->type = TOKEN_SWITCH;
+  else if (strcmp(token->value, "case") == 0)
+    token->type = TOKEN_CASE;
+  else if (strcmp(token->value, "break") == 0)
+    token->type = TOKEN_BREAK;
+  else if (strcmp(token->value, "instanceof") == 0)
+    token->type = TOKEN_INSTANCEOF;
+  else if (strcmp(token->value, "void") == 0)
+    token->type = TOKEN_VOID;
+  else if (strcmp(token->value, "async") == 0)
+    token->type = TOKEN_ASYNC;
+  else if (strcmp(token->value, "await") == 0)
+    token->type = TOKEN_AWAIT;
+  else if (strcmp(token->value, "assert") == 0)
+    token->type = TOKEN_ASSERT;
+  else if (strcmp(token->value, "delete") == 0)
+    token->type = TOKEN_DELETE;
+  else if (strcmp(token->value, "class") == 0)
+    token->type = TOKEN_CLASS;
+  else if (strcmp(token->value, "extends") == 0)
+    token->type = TOKEN_EXTENDS;
+  else if (strcmp(token->value, "get") == 0)
+    token->type = TOKEN_GET;
+  else if (strcmp(token->value, "public") == 0)
+    token->type = TOKEN_PUBLIC;
+  else if (strcmp(token->value, "private") == 0)
+    token->type = TOKEN_PRIVATE;
+
+  return token;
+}
+
 JSLexer *init_js_lexer(char *src) {
   JSLexer *jslexer = NEW(JSLexer);
   jslexer->src = strdup(src);
@@ -156,7 +242,7 @@ JSToken *js_lexer_parse_id(JSLexer *lexer) {
 
   if (s) { free(s); }
 
-  return tok;
+  return modify_token(tok);
 }
 
 JSToken *js_lexer_tok(JSLexer *lexer, JSTokenType type) {
@@ -165,5 +251,5 @@ JSToken *js_lexer_tok(JSLexer *lexer, JSTokenType type) {
   free(value);
   js_lexer_advance(lexer);
 
-  return tok;
+  return modify_token(tok);
 }

@@ -20,12 +20,20 @@ JSAST* js_parser_parse_call(JSParser* parser);
 JSAST* js_parser_parse_array(JSParser* parser);
 JSAST* js_parser_parse_function(JSParser* parser);
 
+JSAST* js_parser_parse_if(JSParser* parser);
+JSAST* js_parser_parse_while(JSParser* parser);
+JSAST* js_parser_parse_for(JSParser* parser);
+
 JSAST* js_parser_parse_factor(JSParser* parser);
 JSAST* js_parser_parse_term(JSParser* parser);
 JSAST* js_parser_parse_expr(JSParser* parser);
 JSAST* js_parser_parse_statement(JSParser* parser);
+JSAST* js_parser_parse_any_statement(JSParser* parser);
 JSAST* js_parser_parse_compound(JSParser* parser);
+JSAST* js_parser_parse_body(JSParser* parser);
 JSAST* js_parser_parse(JSParser* parser);
 
+
+void js_parser_parse_multiple(JSParser* parser, list_T* list, JSTokenType delim);
 
 #endif

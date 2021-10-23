@@ -4,18 +4,26 @@
 #include <js/js_list.h>
 #include <js/js_token.h>
 #include <hashmap/map.h>
+
+
+typedef void* (*JSFunction(list_T* args, map_T* stack));
+
 typedef struct JS_AST_STRUCT {
   JSASTType type;
   struct JS_AST_STRUCT* left;
   struct JS_AST_STRUCT* right;
+  struct JS_AST_STRUCT* body;
   float value_num;
   char* value_str;
   list_T* children;
   list_T* args;
   map_T* keyvalue;
   JSTokenType token_type;
+  JSFunction* fptr;
 
 } JSAST;
 
 JSAST* init_js_ast(JSASTType type);
+
+void js_ast_set_value_str(JSAST* ast, char* value_str);
 #endif
