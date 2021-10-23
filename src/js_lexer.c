@@ -5,12 +5,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdlib.h>
 #include <sys/param.h>
 
-static JSToken* modify_token(JSToken* token) {
-  if (token == 0) return token;
-  if (token->value == 0) return token;
+static JSToken *modify_token(JSToken *token) {
+  if (token == 0)
+    return token;
+  if (token->value == 0)
+    return token;
 
   if (strcmp(token->value, "if") == 0)
     token->type = TOKEN_IF;
@@ -123,9 +124,11 @@ JSToken *js_lexer_get_next_token(JSLexer *lexer) {
     if (isalpha(lexer->c) || lexer->c == '_')
       return js_lexer_parse_id(lexer);
 
-    if (isdigit(lexer->c)) return js_lexer_parse_num(lexer);
+    if (isdigit(lexer->c))
+      return js_lexer_parse_num(lexer);
 
-    if (lexer->c == '\'' || lexer->c == '"') return js_lexer_parse_str(lexer);
+    if (lexer->c == '\'' || lexer->c == '"')
+      return js_lexer_parse_str(lexer);
 
     if (lexer->c == '&' && js_lexer_peek(lexer, 1) == '&') {
       return js_lexer_tok_n(lexer, TOKEN_AND_AND, 2);
@@ -135,34 +138,65 @@ JSToken *js_lexer_get_next_token(JSLexer *lexer) {
       return js_lexer_tok_n(lexer, TOKEN_EQUALS_EQUALS, 2);
     }
 
+    if (lexer->c == '=' && js_lexer_peek(lexer, 1) == '>') {
+      return js_lexer_tok_n(lexer, TOKEN_ARROW_RIGHT, 2);
+    }
+
     switch (lexer->c) {
-      case '{': return js_lexer_tok(lexer, TOKEN_LBRACE);
-      case '}': return js_lexer_tok(lexer, TOKEN_RBRACE);
-      case '(': return js_lexer_tok(lexer, TOKEN_LPAREN);
-      case ')': return js_lexer_tok(lexer, TOKEN_RPAREN);
-      case '[': return js_lexer_tok(lexer, TOKEN_LBRACKET);
-      case ']': return js_lexer_tok(lexer, TOKEN_RBRACKET);
-      case ';': return js_lexer_tok(lexer, TOKEN_SEMI);
-      case '=': return js_lexer_tok(lexer, TOKEN_EQUALS);
-      case '<': return js_lexer_tok(lexer, TOKEN_LT);
-      case '>': return js_lexer_tok(lexer, TOKEN_GT);
-      case '.': return js_lexer_tok(lexer, TOKEN_DOT);
-      case ',': return js_lexer_tok(lexer, TOKEN_COMMA);
-      case ':': return js_lexer_tok(lexer, TOKEN_COLON);
-      case '!': return js_lexer_tok(lexer, TOKEN_NOT);
-      case '&': return js_lexer_tok(lexer, TOKEN_AND);
-      case '+': return js_lexer_tok(lexer, TOKEN_PLUS);
-      case '-': return js_lexer_tok(lexer, TOKEN_MINUS);
-      case '/': return js_lexer_tok(lexer, TOKEN_DIV);
-      case '%': return js_lexer_tok(lexer, TOKEN_MOD);
-      case '|': return js_lexer_tok(lexer, TOKEN_PIPE);
-      case '*': return js_lexer_tok(lexer, TOKEN_STAR);
-      case '?': return js_lexer_tok(lexer, TOKEN_QUESTION);
-      case '\\': return js_lexer_tok(lexer, TOKEN_ESCAPE);
-      case '#': return js_lexer_tok(lexer, TOKEN_HASH);
-      case '^': return js_lexer_tok(lexer, TOKEN_SQUARED);
-      case '~': return js_lexer_tok(lexer, TOKEN_TILDE);
-      case '\0': break;
+    case '{':
+      return js_lexer_tok(lexer, TOKEN_LBRACE);
+    case '}':
+      return js_lexer_tok(lexer, TOKEN_RBRACE);
+    case '(':
+      return js_lexer_tok(lexer, TOKEN_LPAREN);
+    case ')':
+      return js_lexer_tok(lexer, TOKEN_RPAREN);
+    case '[':
+      return js_lexer_tok(lexer, TOKEN_LBRACKET);
+    case ']':
+      return js_lexer_tok(lexer, TOKEN_RBRACKET);
+    case ';':
+      return js_lexer_tok(lexer, TOKEN_SEMI);
+    case '=':
+      return js_lexer_tok(lexer, TOKEN_EQUALS);
+    case '<':
+      return js_lexer_tok(lexer, TOKEN_LT);
+    case '>':
+      return js_lexer_tok(lexer, TOKEN_GT);
+    case '.':
+      return js_lexer_tok(lexer, TOKEN_DOT);
+    case ',':
+      return js_lexer_tok(lexer, TOKEN_COMMA);
+    case ':':
+      return js_lexer_tok(lexer, TOKEN_COLON);
+    case '!':
+      return js_lexer_tok(lexer, TOKEN_NOT);
+    case '&':
+      return js_lexer_tok(lexer, TOKEN_AND);
+    case '+':
+      return js_lexer_tok(lexer, TOKEN_PLUS);
+    case '-':
+      return js_lexer_tok(lexer, TOKEN_MINUS);
+    case '/':
+      return js_lexer_tok(lexer, TOKEN_DIV);
+    case '%':
+      return js_lexer_tok(lexer, TOKEN_MOD);
+    case '|':
+      return js_lexer_tok(lexer, TOKEN_PIPE);
+    case '*':
+      return js_lexer_tok(lexer, TOKEN_STAR);
+    case '?':
+      return js_lexer_tok(lexer, TOKEN_QUESTION);
+    case '\\':
+      return js_lexer_tok(lexer, TOKEN_ESCAPE);
+    case '#':
+      return js_lexer_tok(lexer, TOKEN_HASH);
+    case '^':
+      return js_lexer_tok(lexer, TOKEN_SQUARED);
+    case '~':
+      return js_lexer_tok(lexer, TOKEN_TILDE);
+    case '\0':
+      break;
     }
   }
 
@@ -170,13 +204,15 @@ JSToken *js_lexer_get_next_token(JSLexer *lexer) {
 }
 
 void js_lexer_skip_whitespace(JSLexer *lexer) {
-  while (JS_LEXER_DONE(lexer) == 0 && (lexer->c == ' ' || lexer->c == '\n' || lexer->c == '\r' || lexer->c == 13 || lexer->c == '\t')) {
+  while (JS_LEXER_DONE(lexer) == 0 &&
+         (lexer->c == ' ' || lexer->c == '\n' || lexer->c == '\r' ||
+          lexer->c == 13 || lexer->c == '\t')) {
     js_lexer_advance(lexer);
   }
 }
 
 JSToken *js_lexer_parse_str(JSLexer *lexer) {
-  char* str = 0;
+  char *str = 0;
   char start = lexer->c;
 
   js_lexer_advance(lexer);
@@ -203,9 +239,11 @@ JSToken *js_lexer_parse_str(JSLexer *lexer) {
   if (lexer->c == start)
     js_lexer_advance(lexer);
 
-  JSToken* token = init_js_token(TOKEN_STRING, str ? str : strdup(""));
+  JSToken *token = init_js_token(TOKEN_STRING, str ? str : strdup(""));
 
-  if (str) { free(str); }
+  if (str) {
+    free(str);
+  }
 
   token->c = start;
 
@@ -213,7 +251,7 @@ JSToken *js_lexer_parse_str(JSLexer *lexer) {
 }
 
 JSToken *js_lexer_parse_num(JSLexer *lexer) {
-  char* s = 0;
+  char *s = 0;
   JSTokenType type = TOKEN_INT;
 
   while (isdigit(lexer->c)) {
@@ -232,24 +270,28 @@ JSToken *js_lexer_parse_num(JSLexer *lexer) {
     js_lexer_advance(lexer);
   }
 
-  JSToken* tok = init_js_token(type, s);
+  JSToken *tok = init_js_token(type, s);
 
-  if (s) { free(s); }
+  if (s) {
+    free(s);
+  }
 
   return tok;
 }
 
 JSToken *js_lexer_parse_id(JSLexer *lexer) {
-    char* s = 0;
+  char *s = 0;
 
   while (isalpha(lexer->c) || lexer->c == '_') {
     js_str_append(&s, lexer->cstr);
     js_lexer_advance(lexer);
   }
 
-  JSToken* tok = init_js_token(TOKEN_ID, s);
+  JSToken *tok = init_js_token(TOKEN_ID, s);
 
-  if (s) { free(s); }
+  if (s) {
+    free(s);
+  }
 
   return modify_token(tok);
 }
@@ -264,7 +306,7 @@ JSToken *js_lexer_tok(JSLexer *lexer, JSTokenType type) {
 }
 
 JSToken *js_lexer_tok_n(JSLexer *lexer, JSTokenType type, uint32_t n) {
-  char* value = 0;
+  char *value = 0;
   for (uint32_t i = 0; i < n; i++) {
     char *v = char_to_str(lexer->c);
     js_str_append(&value, v);
@@ -277,6 +319,6 @@ JSToken *js_lexer_tok_n(JSLexer *lexer, JSTokenType type, uint32_t n) {
   return modify_token(tok);
 }
 
-char js_lexer_peek(JSLexer* lexer, uint32_t i) {
-  return lexer->src[MIN(lexer->i + i, lexer->len-1)];
+char js_lexer_peek(JSLexer *lexer, uint32_t i) {
+  return lexer->src[MIN(lexer->i + i, lexer->len - 1)];
 }

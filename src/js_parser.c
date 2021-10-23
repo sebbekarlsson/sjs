@@ -10,8 +10,8 @@ static unsigned int should_parse_statement(JSParser *parser) {
   return token->type == TOKEN_IF || token->type == TOKEN_RETURN ||
          token->type == TOKEN_BREAK || token->type == TOKEN_ELSE ||
          token->type == TOKEN_WHILE || token->type == TOKEN_FOR ||
-    token->type == TOKEN_FUNCTION || token->type == TOKEN_CONST ||
-    token->type == TOKEN_VAR || token->type == TOKEN_LET;
+         token->type == TOKEN_FUNCTION || token->type == TOKEN_CONST ||
+         token->type == TOKEN_VAR || token->type == TOKEN_LET;
 }
 
 JSParser *init_js_parser(JSLexer *lexer) {
@@ -67,7 +67,7 @@ JSAST *js_parser_parse_function(JSParser *parser) {
 
   js_parser_eat(parser, TOKEN_LPAREN);
   if (parser->token->type != TOKEN_RPAREN) {
-    js_parser_parse_multiple(ast->args, parser, TOKEN_COMMA);
+    js_parser_parse_multiple(parser, ast->args, TOKEN_COMMA);
   }
   js_parser_eat(parser, TOKEN_RPAREN);
 
@@ -82,7 +82,7 @@ JSAST *js_parser_parse_function(JSParser *parser) {
 
 JSAST *js_parser_parse_if(JSParser *parser) {
 
-  JSAST* ast = init_js_ast(JS_AST_IF);
+  JSAST *ast = init_js_ast(JS_AST_IF);
 
   if (parser->token->type == TOKEN_ELSE) {
     ast->type = JS_AST_ELSE;
@@ -128,6 +128,33 @@ JSAST *js_parser_parse_for(JSParser *parser) {
 }
 
 JSAST *js_parser_parse_factor(JSParser *parser) {
+  if (parser->token->type == TOKEN_LPAREN) {
+    js_parser_eat(parser, TOKEN_LPAREN);
+    JSAST *ast = 0;
+    list_T *args = init_list(sizeof(JSAST *));
+    if (parser->token->type != TOKEN_RPAREN) {
+      js_parser_parse_multiple(parser, args, TOKEN_COMMA);
+    }
+    js_parser_eat(parser, TOKEN_RPAREN);
+
+    if (parser->token->type == TOKEN_ARROW_RIGHT) {
+      js_parser_eat(parser, TOKEN_ARROW_RIGHT);
+      ast = init_js_ast(JS_AST_FUNCTION);
+      list_free_shallow(ast->args);
+      ast->args = args;
+      if (parser->token->type == TOKEN_LBRACE) {
+        js_parser_eat(parser, TOKEN_LBRACE);
+        if (parser->token->type != TOKEN_RBRACE) {
+          ast->body = js_parser_parse_body(parser);
+        }
+        js_parser_eat(parser, TOKEN_RBRACE);
+      } else {
+        ast->body = js_parser_parse_expr(parser);
+      }
+    }
+
+    return ast;
+  }
   switch (parser->token->type) {
   case TOKEN_STRING:
     return js_parser_parse_str(parser);
@@ -215,15 +242,12 @@ JSAST *js_parser_parse_expr(JSParser *parser) {
     left = assign;
   }
 
-
-
-
-  while (left && (parser->token->type == TOKEN_GT ||
-                  parser->token->type == TOKEN_LT ||
-                  parser->token->type == TOKEN_EQUALS_EQUALS ||
-                  parser->token->type == TOKEN_EQUALS_EQUALS_EQUALS ||
-                  parser->token->type == TOKEN_NOT_EQUALS ||
-         parser->token->type == TOKEN_NOT_EQUALS_EQUALS)) {
+  while (left &&
+         (parser->token->type == TOKEN_GT || parser->token->type == TOKEN_LT ||
+          parser->token->type == TOKEN_EQUALS_EQUALS ||
+          parser->token->type == TOKEN_EQUALS_EQUALS_EQUALS ||
+          parser->token->type == TOKEN_NOT_EQUALS ||
+          parser->token->type == TOKEN_NOT_EQUALS_EQUALS)) {
     JSAST *binop = init_js_ast(JS_AST_BINOP);
     binop->left = left;
     binop->token_type = parser->token->type;
@@ -232,7 +256,7 @@ JSAST *js_parser_parse_expr(JSParser *parser) {
     left = binop;
   }
 
-      while (left && (parser->token->type == TOKEN_AND_AND)) {
+  while (left && (parser->token->type == TOKEN_AND_AND)) {
     JSAST *binop = init_js_ast(JS_AST_BINOP);
     binop->left = left;
     binop->token_type = parser->token->type;
@@ -271,13 +295,18 @@ JSAST *js_parser_parse_assignment(JSParser *parser) {
 JSAST *js_parser_parse_any_statement(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_STATEMENT);
   ast->value_str = strdup(parser->token->value);
-  js_parser_eat(parser, TOKEN_ID);
+
+  if (parser->token->type == TOKEN_RETURN)
+    ast->type = JS_AST_RETURN;
+
+  js_parser_eat(parser, parser->token->type);
   ast->right = js_parser_parse_expr(parser);
   return ast;
 }
 JSAST *js_parser_parse_statement(JSParser *parser) {
   switch (parser->token->type) {
-  case TOKEN_IF: case TOKEN_ELSE:
+  case TOKEN_IF:
+  case TOKEN_ELSE:
     return js_parser_parse_if(parser);
     break;
   case TOKEN_WHILE:
@@ -360,22 +389,17 @@ JSAST *js_parser_parse(JSParser *parser) {
 
 void js_parser_parse_multiple(JSParser *parser, list_T *list,
                               JSTokenType delim) {
-  if (delim == TOKEN_EOF) {
-    while (parser->token->type != TOKEN_EOF) {
-      list_push(list, js_parser_parse_expr(parser));
-    }
-  } else {
-    JSAST *child = js_parser_parse_expr(parser);
+  JSAST *child = js_parser_parse_expr(parser);
+
+  if (child != 0)
+    list_push(list, child);
+
+  while (parser->token->type == delim && parser->token->type != TOKEN_EOF &&
+         parser->token->type != TOKEN_RPAREN) {
+    js_parser_eat(parser, delim);
+    child = js_parser_parse_expr(parser);
 
     if (child != 0)
       list_push(list, child);
-
-    while (parser->token->type == delim) {
-      js_parser_eat(parser, delim);
-      child = js_parser_parse_expr(parser);
-
-      if (child != 0)
-        list_push(list, child);
-    }
   }
 }

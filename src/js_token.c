@@ -1,11 +1,10 @@
 #include <js/js_token.h>
 #include <js/macros.h>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
-
-JSToken* init_js_token(JSTokenType type, char* value) {
-  JSToken* tok = NEW(JSToken);
+JSToken *init_js_token(JSTokenType type, char *value) {
+  JSToken *tok = NEW(JSToken);
   tok->type = type;
   tok->value = strdup(value ? value : "");
   tok->c = 0;
@@ -13,16 +12,15 @@ JSToken* init_js_token(JSTokenType type, char* value) {
   return tok;
 }
 
-
-char* js_token_to_str(JSToken* token) {
-  const char* typestr = JS_TOKEN_TYPE_STR[token->type];
-  const char* template = "<token type={%s} value={%s}/>";
-  char* str = js_calloc(strlen(typestr) + strlen(template) + 16, sizeof(char));
+char *js_token_to_str(JSToken *token) {
+  const char *typestr = JS_TOKEN_TYPE_STR[token->type];
+  const char *template = "<token type={%s} value={%s}/>";
+  char *str = js_calloc(strlen(typestr) + strlen(template) + 16, sizeof(char));
   sprintf(str, template, typestr, token->value);
 
   return str;
 }
 
-const char* js_token_type_to_str(JSTokenType type) {
-    return JS_TOKEN_TYPE_STR[type];
+const char *js_token_type_to_str(JSTokenType type) {
+  return JS_TOKEN_TYPE_STR[type];
 }
