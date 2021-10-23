@@ -26,4 +26,6 @@ typedef struct JS_AST_STRUCT {
 JSAST* init_js_ast(JSASTType type);
 
 void js_ast_set_value_str(JSAST* ast, char* value_str);
+
+char* js_ast_str_value(JSAST* ast);
 #endif

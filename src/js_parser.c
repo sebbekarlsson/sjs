@@ -116,8 +116,8 @@ JSAST *js_parser_parse_factor(JSParser *parser) {
 JSAST *js_parser_parse_term(JSParser *parser) {
   JSAST *left = js_parser_parse_factor(parser);
 
-  while (left && (parser->token->type == TOKEN_PLUS ||
-                  parser->token->type == TOKEN_MINUS)) {
+  while (left && (parser->token->type == TOKEN_STAR ||
+                  parser->token->type == TOKEN_DIV)) {
     JSAST *binop = init_js_ast(JS_AST_BINOP);
     binop->left = left;
     binop->token_type = parser->token->type;
@@ -140,8 +140,8 @@ JSAST *js_parser_parse_expr(JSParser *parser) {
     left = binop;
   }
 
-  while (left && (parser->token->type == TOKEN_STAR ||
-                  parser->token->type == TOKEN_DIV)) {
+  while (left && (parser->token->type == TOKEN_PLUS ||
+                  parser->token->type == TOKEN_MINUS)) {
     JSAST *binop = init_js_ast(JS_AST_BINOP);
     binop->left = left;
     binop->token_type = parser->token->type;

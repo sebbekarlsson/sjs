@@ -9,7 +9,12 @@
 void* _builtin_print(list_T* args, map_T* stack) {
   for (uint32_t i = 0; i < args->size; i++) {
     JSAST* arg = (JSAST*)args->items[i];
-    printf("%s\n", arg->value_str);
+    char* str = js_ast_str_value(arg);
+
+    if (str != 0) {
+      printf("%s\n", str);
+      free(str);
+    }
   }
 
   return init_js_ast(JS_AST_UNDEFINED);
@@ -26,6 +31,9 @@ int main(int argc, char* argv[]) {
 
 
   JSAST* func = init_js_ast(JS_AST_FUNCTION);
+  JSAST* id = init_js_ast(JS_AST_ID);
+  js_ast_set_value_str(id, "value");
+  list_push(func->args, id);
   func->fptr = _builtin_print;
   js_ast_set_value_str(func, "log");
 

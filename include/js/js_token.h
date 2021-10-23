@@ -8,4 +8,8 @@ typedef struct {
 } JSToken;
 
 JSToken* init_js_token(JSTokenType type, char* value);
+
+char* js_token_to_str(JSToken* token);
+
+const char* js_token_type_to_str(JSTokenType type);
 #endif

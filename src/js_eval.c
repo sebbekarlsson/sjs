@@ -59,6 +59,8 @@ JSAST *js_eval_call(JSAST *ast, map_T* stack) {
 
   list_T* function_args = ast->left->args;
 
+  list_T* evaluated_args = init_list(sizeof(JSAST*));
+
   for (uint32_t i = 0; i < function_args->size; i++) {
     if (i >= ast->args->size) break;
 
@@ -66,18 +68,20 @@ JSAST *js_eval_call(JSAST *ast, map_T* stack) {
     JSAST* carg = (JSAST*) ast->args->items[i];
     JSAST* evaluated = js_eval(carg, stack);
 
+    list_push(evaluated_args, evaluated);
     map_set(stack, farg->value_str, evaluated);
   }
 
   if (ast->left->fptr != 0) {
-    result = (JSAST*)ast->left->fptr(ast->args, stack);
+    result = (JSAST*)ast->left->fptr(evaluated_args, stack);
+    list_free_shallow(evaluated_args);
   } else if (ast->left->body) {
     result = js_eval(ast->left->body, stack);
   }
 
-  //if (ast->right) {
-  //  ast->right = js_eval(ast->right, stack);
-  //}
+  if (ast->right) {
+    ast->right = js_eval(ast->right, stack);
+  }
 
   return result ? result : init_js_ast(JS_AST_UNDEFINED);
 }
@@ -113,27 +117,29 @@ JSAST *js_eval_function(JSAST *ast, map_T* stack) {
   return init_js_ast(JS_AST_UNDEFINED);
 }
 
-#define MATH_OP(ast, op, stack)                     \
-  { JSAST* left = ast->left;                               \
-    JSAST* right = ast->right;\
+#define MATH_OP(name, ast, op, stack)                     \
+  JSAST* left = js_eval(ast->left, stack);                               \
+    JSAST* right = js_eval(ast->right, stack);\
     float x = left->value_num;\
     float y = right->value_num;\
     JSAST* name = init_js_ast(JS_AST_NUMBER);\
-    name->value_num = x op y;\
-    return name;\
-  }
+    name->value_num = x op y;
 
 JSAST* js_eval_math_add(JSAST* ast, map_T* stack) {
-  MATH_OP(ast, +, stack);
+  MATH_OP(result, ast, +, stack);
+  return result;
 }
 JSAST* js_eval_math_minus(JSAST* ast, map_T* stack) {
-  MATH_OP(ast, -, stack);
+  MATH_OP(result, ast, -, stack);
+  return result;
 }
 JSAST* js_eval_math_star(JSAST* ast, map_T* stack) {
-  MATH_OP(ast, *, stack);
+  MATH_OP(result, ast, *, stack);
+  return result;
 }
 JSAST* js_eval_math_div(JSAST* ast, map_T* stack) {
-  MATH_OP(ast, /, stack);
+  MATH_OP(result, ast, /, stack);
+  return result;
 }
 
 JSAST *js_eval_binop(JSAST *ast, map_T* stack) {
