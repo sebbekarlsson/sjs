@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.20)
 project(xjs)
 
 file(GLOB PUBLIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
-file(GLOB xjs_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
+file(GLOB xjs_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c ${CMAKE_CURRENT_SOURCE_DIR}/src/**/*.c ${CMAKE_CURRENT_SOURCE_DIR}/src/**/**/*.c)
 
 
 add_compile_options(-g -Wall)

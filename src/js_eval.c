@@ -1,6 +1,7 @@
 #include <js/js_eval.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #define STACK_ADDR_RETURN "RETURN"
 
@@ -228,7 +229,7 @@ JSAST *js_eval_definition(JSAST *ast, map_T *stack) {
 JSAST *js_eval_assignment(JSAST *ast, map_T *stack) {
   JSAST *left = js_eval(ast->left, stack);
   if (left->type == JS_AST_ID)
-    return; // never want to modify ID.
+    return ast; // never want to modify ID.
 
   JSAST *right = js_eval(ast->right, stack);
 
