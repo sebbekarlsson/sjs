@@ -1,0 +1,17 @@
+typedef enum JS_AST_TYPE
+{
+  {{
+    join(map(astEnums, (@
+      {{ $0 }}
+
+    @)), ",")
+  }}
+} JSASTType;
+
+static const char * JS_AST_TYPE_STR[] = {
+  {{
+    join(map(astEnums, (@
+      "{{ $0 }}"
+    @)), ",")
+  }}
+};

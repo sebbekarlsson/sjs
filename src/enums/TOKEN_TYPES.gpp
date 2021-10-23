@@ -1,0 +1,17 @@
+typedef enum JS_TOKEN_TYPE
+{
+  {{
+    join(map(tokenTypes, (@
+      {{ $0 }}
+
+    @)), ",")
+  }}
+} JSTokenType;
+
+static const char * JS_TOKEN_TYPE_STR[] = {
+  {{
+    join(map(tokenTypes, (@
+      "{{ $0 }}"
+    @)), ",")
+  }}
+};
