@@ -23,6 +23,8 @@ JSAST* js_parser_parse_function(JSParser* parser);
 JSAST* js_parser_parse_if(JSParser* parser);
 JSAST* js_parser_parse_while(JSParser* parser);
 JSAST* js_parser_parse_for(JSParser* parser);
+JSAST* js_parser_parse_definition(JSParser* parser);
+JSAST* js_parser_parse_assignment(JSParser* parser);
 
 JSAST* js_parser_parse_factor(JSParser* parser);
 JSAST* js_parser_parse_term(JSParser* parser);

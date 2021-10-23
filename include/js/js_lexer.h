@@ -23,5 +23,8 @@ JSToken* js_lexer_parse_str(JSLexer* lexer);
 JSToken* js_lexer_parse_num(JSLexer* lexer);
 JSToken* js_lexer_parse_id(JSLexer* lexer);
 JSToken* js_lexer_tok(JSLexer* lexer, JSTokenType type);
+JSToken *js_lexer_tok_n(JSLexer *lexer, JSTokenType type, uint32_t n);
+
+char js_lexer_peek(JSLexer* lexer, uint32_t i);
 
 #endif

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/param.h>
 
 static JSToken* modify_token(JSToken* token) {
   if (token == 0) return token;
@@ -125,6 +126,14 @@ JSToken *js_lexer_get_next_token(JSLexer *lexer) {
     if (isdigit(lexer->c)) return js_lexer_parse_num(lexer);
 
     if (lexer->c == '\'' || lexer->c == '"') return js_lexer_parse_str(lexer);
+
+    if (lexer->c == '&' && js_lexer_peek(lexer, 1) == '&') {
+      return js_lexer_tok_n(lexer, TOKEN_AND_AND, 2);
+    }
+
+    if (lexer->c == '=' && js_lexer_peek(lexer, 1) == '=') {
+      return js_lexer_tok_n(lexer, TOKEN_EQUALS_EQUALS, 2);
+    }
 
     switch (lexer->c) {
       case '{': return js_lexer_tok(lexer, TOKEN_LBRACE);
@@ -252,4 +261,22 @@ JSToken *js_lexer_tok(JSLexer *lexer, JSTokenType type) {
   js_lexer_advance(lexer);
 
   return modify_token(tok);
+}
+
+JSToken *js_lexer_tok_n(JSLexer *lexer, JSTokenType type, uint32_t n) {
+  char* value = 0;
+  for (uint32_t i = 0; i < n; i++) {
+    char *v = char_to_str(lexer->c);
+    js_str_append(&value, v);
+    free(v);
+    js_lexer_advance(lexer);
+  }
+
+  JSToken *tok = init_js_token(type, value);
+
+  return modify_token(tok);
+}
+
+char js_lexer_peek(JSLexer* lexer, uint32_t i) {
+  return lexer->src[MIN(lexer->i + i, lexer->len-1)];
 }
