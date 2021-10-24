@@ -1,6 +1,6 @@
-<center style="text-align: center; width: 100%;">
+<p align="center" style="text-align: center; width: 100%;">
     <img width="256px" src="img/logo.jpg"/>
-</center>
+</p>
 
 # XJS
 > Javascript Engine
