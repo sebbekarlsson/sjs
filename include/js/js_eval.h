@@ -2,6 +2,8 @@
 #define JS_ENGINE_EVAL_H
 #include <js/js_AST.h>
 
+#define STACK_ADDR_RETURN "RETURN"
+
 JSAST *js_eval(JSAST *ast, map_T *stack);
 JSAST *js_maybe_eval(JSAST *ast, map_T *stack);
 JSAST *js_eval_compound(JSAST *ast, map_T *stack);
@@ -21,4 +23,6 @@ JSAST *js_eval_unop(JSAST *ast, map_T *stack);
 JSAST *js_eval_id(JSAST *ast, map_T *stack);
 JSAST *js_eval_definition(JSAST *ast, map_T *stack);
 JSAST *js_eval_assignment(JSAST *ast, map_T *stack);
+
+void stack_pop(map_T *stack, const char *key);
 #endif

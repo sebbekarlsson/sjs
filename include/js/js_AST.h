@@ -6,7 +6,7 @@
 #include <js/js_token.h>
 #include <stdint.h>
 
-typedef void *(*JSFunction(list_T *args, map_T *stack));
+typedef void *(*JSFunction(void *ptr, list_T *args, map_T *stack));
 
 typedef struct JS_AST_STRUCT {
   JSASTType type;
@@ -16,6 +16,7 @@ typedef struct JS_AST_STRUCT {
   struct JS_AST_STRUCT *expr;
   struct JS_AST_STRUCT *prototype;
   struct JS_AST_STRUCT *prototype_child;
+  struct JS_AST_STRUCT *accessed;
   float value_num;
   int value_int;
   uint32_t *value_int_ptr;

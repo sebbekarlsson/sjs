@@ -3,13 +3,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#define STACK_ADDR_RETURN "RETURN"
-
 static unsigned int is_true(JSAST *ast) {
   return ((ast->is_true) || ast->value_int);
 }
 
-static void stack_pop(map_T *stack, const char *key) {
+void stack_pop(map_T *stack, const char *key) {
   JSAST *ast = (JSAST *)map_get_value(stack, key);
   if (ast == 0)
     return;
@@ -132,7 +130,7 @@ JSAST *js_eval_call(JSAST *ast, map_T *stack) {
   JSAST *left = js_eval(ast->left, stack);
 
   if (left && left->type != JS_AST_FUNCTION) {
-    if (ast->left->value_str) {
+    if (left->value_str != 0) {
       printf("`%s` (%d) is not a function.\n", left->value_str, left->type);
       exit(1);
     } else {
@@ -161,15 +159,17 @@ JSAST *js_eval_call(JSAST *ast, map_T *stack) {
   }
 
   if (left->fptr != 0) {
-    result = (JSAST *)left->fptr(evaluated_args, stack);
+    result = (JSAST *)left->fptr(
+        left != 0 && left->accessed != 0 ? left->accessed : 0, evaluated_args,
+        stack);
     list_free_shallow(evaluated_args);
-  } else if (ast->left->body) {
+  } else if (left->body) {
     result = js_eval(left->body, stack);
   }
 
-  // if (ast->right) {
-  //  ast->right = js_eval(ast->right, stack);
-  //}
+  if (ast->right) {
+    js_eval(ast->right, stack);
+  }
 
   JSAST *ret = (JSAST *)map_get_value(stack, STACK_ADDR_RETURN);
   if (ret) {
@@ -189,7 +189,10 @@ JSAST *js_eval_number(JSAST *ast, map_T *stack) {
 }
 JSAST *js_eval_function(JSAST *ast, map_T *stack) {
   if (ast->fptr != 0)
-    return;
+    return ast;
+
+  if (ast->value_str == 0)
+    return ast;
   /*  for (uint32_t i = 0; i < ast->args->size; i++) {
       JSAST* arg = (JSAST*)ast->args->items[i];
       if (arg == 0) continue;
@@ -405,6 +408,7 @@ JSAST *js_eval_dot(JSAST *ast, map_T *stack) {
   }
 
   if (result && key) {
+    result->accessed = left;
     map_set(stack, key, result);
   }
 

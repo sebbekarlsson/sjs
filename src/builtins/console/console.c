@@ -1,7 +1,7 @@
 #include <js/builtins/console/console.h>
 #include <stdint.h>
 
-static void *builtin_console_log(list_T *args, map_T *stack) {
+static void *builtin_console_log(void *ptr, list_T *args, map_T *stack) {
   for (uint32_t i = 0; i < args->size; i++) {
     JSAST *arg = (JSAST *)args->items[i];
     char *str = js_ast_to_string(arg);

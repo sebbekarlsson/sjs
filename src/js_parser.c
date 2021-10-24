@@ -1,6 +1,7 @@
 #include <js/js_parser.h>
 #include <js/macros.h>
 #include <stdio.h>
+#include <string.h>
 
 static unsigned int should_parse_statement(JSParser *parser) {
   JSToken *token = parser->token;
@@ -65,7 +66,6 @@ JSAST *js_parser_parse_id(JSParser *parser) {
   js_parser_eat(parser, TOKEN_ID);
   return ast;
 }
-JSAST *js_parser_parse_call(JSParser *parser) { return 0; }
 JSAST *js_parser_parse_array(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_ARRAY);
   js_parser_eat(parser, TOKEN_LBRACKET);
@@ -245,6 +245,8 @@ JSAST *js_parser_parse_factor(JSParser *parser) {
     }
     js_parser_eat(parser, TOKEN_RPAREN);
 
+    // TODO: need a while loop here to parse binop after `(` and `)`.
+
     if (parser->token->type == TOKEN_ARROW_RIGHT) {
       js_parser_eat(parser, TOKEN_ARROW_RIGHT);
       ast = init_js_ast(JS_AST_FUNCTION);
@@ -409,6 +411,8 @@ JSAST *js_parser_parse_definition(JSParser *parser) {
     js_parser_eat(parser, TOKEN_CONST);
   } else if (parser->token->type == TOKEN_VAR) {
     js_parser_eat(parser, TOKEN_VAR);
+  } else if (parser->token->type == TOKEN_FUNCTION) {
+    return js_parser_parse_function(parser);
   } else {
     js_parser_eat(parser, TOKEN_LET);
   }
