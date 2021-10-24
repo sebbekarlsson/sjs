@@ -1,3 +1,4 @@
+#include <js/builtins/array.h>
 #include <js/js_AST.h>
 #include <js/macros.h>
 #include <stdio.h>
@@ -11,6 +12,11 @@ JSAST *init_js_ast(JSASTType type) {
   ast->args = init_list(sizeof(JSAST *));
   ast->keyvalue = NEW_MAP();
   ast->is_result = 0;
+  ast->prototype = 0;
+
+  if (type == JS_AST_ARRAY) {
+    ast->prototype = init_js_builtin_array_prototype(ast);
+  }
 
   return ast;
 }

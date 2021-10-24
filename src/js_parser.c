@@ -66,7 +66,19 @@ JSAST *js_parser_parse_id(JSParser *parser) {
   return ast;
 }
 JSAST *js_parser_parse_call(JSParser *parser) { return 0; }
-JSAST *js_parser_parse_array(JSParser *parser) { return 0; }
+JSAST *js_parser_parse_array(JSParser *parser) {
+  JSAST *ast = init_js_ast(JS_AST_ARRAY);
+  js_parser_eat(parser, TOKEN_LBRACKET);
+
+  if (parser->token->type != TOKEN_RBRACKET) {
+    js_parser_parse_multiple(parser, ast->children, TOKEN_COMMA);
+  }
+
+  js_parser_eat(parser, TOKEN_RBRACKET);
+
+  return ast;
+}
+
 JSAST *js_parser_parse_function(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_FUNCTION);
   js_parser_eat(parser, TOKEN_FUNCTION);
@@ -221,6 +233,9 @@ JSAST *js_parser_parse_factor(JSParser *parser) {
   if (parser->token->type == TOKEN_LBRACE) {
     return js_parser_parse_object(parser);
   }
+  if (parser->token->type == TOKEN_LBRACKET) {
+    return js_parser_parse_array(parser);
+  }
   if (parser->token->type == TOKEN_LPAREN) {
     js_parser_eat(parser, TOKEN_LPAREN);
     JSAST *ast = 0;
@@ -336,10 +351,29 @@ JSAST *js_parser_parse_expr(JSParser *parser) {
     left = call;
   }
 
+  // array access
+  while (left && (parser->token->type == TOKEN_LBRACKET)) {
+    JSAST *access = init_js_ast(JS_AST_PROPERTY_ACCESS);
+    js_ast_set_value_str(access, left->value_str);
+    access->left = left;
+    js_parser_eat(parser, TOKEN_LBRACKET);
+    if (parser->token->type != TOKEN_RBRACKET) {
+      js_parser_parse_multiple(parser, access->args, TOKEN_COMMA);
+    }
+    js_parser_eat(parser, TOKEN_RBRACKET);
+
+    if (parser->token->type == TOKEN_LBRACKET) {
+      access->right = js_parser_parse_expr(parser);
+    }
+
+    left = access;
+  }
+
   while (left && (parser->token->type == TOKEN_EQUALS)) {
     JSAST *assign = init_js_ast(JS_AST_ASSIGNMENT);
     js_ast_set_value_str(assign, left->value_str);
     assign->left = left;
+    assign->token_type = TOKEN_EQUALS;
     js_parser_eat(parser, TOKEN_EQUALS);
     assign->right = js_parser_parse_expr(parser);
     left = assign;

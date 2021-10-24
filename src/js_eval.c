@@ -87,6 +87,9 @@ JSAST *js_eval(JSAST *ast, map_T *stack) {
   case JS_AST_FOR:
     return js_eval_for(ast, stack);
     break;
+  case JS_AST_PROPERTY_ACCESS:
+    return js_eval_property_access(ast, stack);
+    break;
   default: { return ast; }
   }
 
@@ -176,7 +179,14 @@ JSAST *js_eval_call(JSAST *ast, map_T *stack) {
   return result ? result : init_js_ast_result(JS_AST_UNDEFINED);
 }
 JSAST *js_eval_string(JSAST *ast, map_T *stack) { return ast; }
-JSAST *js_eval_number(JSAST *ast, map_T *stack) { return ast; }
+JSAST *js_eval_number(JSAST *ast, map_T *stack) {
+  if (ast->value_int_size_ptr != 0) {
+    ast->value_int = (int)*ast->value_int_size_ptr;
+    ast->value_num = (float)*ast->value_int_size_ptr;
+  }
+
+  return ast;
+}
 JSAST *js_eval_function(JSAST *ast, map_T *stack) {
   if (ast->fptr != 0)
     return;
@@ -231,7 +241,6 @@ JSAST *js_eval_while(JSAST *ast, map_T *stack) {
 }
 
 JSAST *js_eval_for(JSAST *ast, map_T *stack) {
-  printf("heya\n");
   JSAST *statement1 = ast->args->size > 0 ? (JSAST *)ast->args->items[0] : 0;
   JSAST *statement2 = ast->args->size > 1 ? (JSAST *)ast->args->items[1] : 0;
   JSAST *statement3 = ast->args->size > 2 ? (JSAST *)ast->args->items[2] : 0;
@@ -343,6 +352,17 @@ JSAST *js_eval_binop(JSAST *ast, map_T *stack) {
 
   return ast;
 }
+
+static JSAST *get_property_index_ast(JSAST *ast, map_T *stack) {
+  if (ast->type == JS_AST_PROPERTY_ACCESS) {
+    if (ast->args->size <= 0)
+      return 0;
+    return (JSAST *)ast->args->items[0];
+  } else {
+    return ast->right;
+  }
+}
+
 JSAST *js_eval_dot(JSAST *ast, map_T *stack) {
   JSAST *left = js_eval(ast->left, stack);
   JSAST *right = ast->right;
@@ -351,15 +371,77 @@ JSAST *js_eval_dot(JSAST *ast, map_T *stack) {
     exit(1);
   }
 
+  JSAST *accessor = get_property_index_ast(ast, stack);
+  if (accessor == ast->right)
+    accessor = 0;
+  if (accessor != 0)
+    accessor = js_eval(accessor, stack);
+
+  JSAST *result = 0;
   map_T *obj = left->keyvalue;
-  char *key = right->value_str;
-  JSAST *result = key ? (JSAST *)map_get_value(obj, key) : 0;
+  char *key = right != 0 ? right->value_str : 0;
+
+  if (ast->type == JS_AST_PROPERTY_ACCESS && accessor != 0) {
+    if (accessor->type == JS_AST_NUMBER) {
+      int index = accessor->value_int;
+      result = index + 1 > left->children->size
+                   ? init_js_ast_result(JS_AST_UNDEFINED)
+                   : (JSAST *)left->children->items[index];
+    } else if (accessor->type == JS_AST_STRING) {
+      key = accessor->value_str;
+      result = key ? (JSAST *)map_get_value(obj, key) : 0;
+    }
+  } else {
+    result = key ? (JSAST *)map_get_value(obj, key) : 0;
+
+    if (result == 0 && left->prototype != 0) {
+      obj = left->prototype->keyvalue;
+      result = key ? (JSAST *)map_get_value(obj, key) : 0;
+
+      if (result != 0) {
+        result = js_eval(result, stack);
+      }
+    }
+  }
 
   if (result && key) {
     map_set(stack, key, result);
   }
 
-  right = js_eval(ast->right, stack);
+  if (ast->right != 0) {
+    right = js_eval(ast->right, stack);
+    return right;
+  }
+
+  return result ? result : init_js_ast_result(JS_AST_UNDEFINED);
+}
+
+JSAST *js_eval_property_access(JSAST *ast, map_T *stack) {
+  JSAST *left = js_eval(ast->left, stack);
+
+  if (ast->args->size <= 0)
+    return init_js_ast(
+        JS_AST_UNDEFINED); // might not be what we wanna do though.
+
+  if (left->type == JS_AST_OBJECT)
+    return js_eval_dot(ast, stack);
+
+  JSAST *right = ast->right;
+  if (left->type == JS_AST_UNDEFINED) {
+    printf("Error: `%s` is undefined.\n", left->value_str);
+    exit(1);
+  }
+
+  JSAST *result = 0;
+  JSAST *indexast = js_eval((JSAST *)ast->args->items[0], stack);
+  int index = indexast->value_int;
+  result = index + 1 > left->children->size
+               ? init_js_ast_result(JS_AST_UNDEFINED)
+               : (JSAST *)left->children->items[index];
+
+  if (ast->right) {
+    right = js_eval(ast->right, stack);
+  }
 
   return result ? result : init_js_ast_result(JS_AST_UNDEFINED);
 }

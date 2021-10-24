@@ -4,6 +4,7 @@
 #include <hashmap/map.h>
 #include <js/js_list.h>
 #include <js/js_token.h>
+#include <stdint.h>
 
 typedef void *(*JSFunction(list_T *args, map_T *stack));
 
@@ -13,8 +14,12 @@ typedef struct JS_AST_STRUCT {
   struct JS_AST_STRUCT *right;
   struct JS_AST_STRUCT *body;
   struct JS_AST_STRUCT *expr;
+  struct JS_AST_STRUCT *prototype;
+  struct JS_AST_STRUCT *prototype_child;
   float value_num;
   int value_int;
+  uint32_t *value_int_ptr;
+  size_t *value_int_size_ptr;
   char *value_str;
   list_T *children;
   list_T *args;
