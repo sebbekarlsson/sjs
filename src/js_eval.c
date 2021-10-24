@@ -84,12 +84,20 @@ JSAST *js_eval(JSAST *ast, map_T *stack) {
     break;
   case JS_AST_WHILE:
     return js_eval_while(ast, stack);
+  case JS_AST_FOR:
+    return js_eval_for(ast, stack);
     break;
   default: { return ast; }
   }
 
   return ast;
 }
+JSAST *js_maybe_eval(JSAST *ast, map_T *stack) {
+  if (ast == 0)
+    return init_js_ast_result(JS_AST_UNDEFINED);
+  return js_eval(ast, stack);
+}
+
 JSAST *js_eval_compound(JSAST *ast, map_T *stack) {
   for (uint32_t i = 0; i < ast->children->size; i++) {
     JSAST *child = (JSAST *)ast->children->items[i];
@@ -216,6 +224,21 @@ JSAST *js_eval_if(JSAST *ast, map_T *stack) {
 
 JSAST *js_eval_while(JSAST *ast, map_T *stack) {
   while (is_true(js_eval(ast->expr, stack)) && ast->body != 0) {
+    js_eval(ast->body, stack);
+  }
+
+  return ast;
+}
+
+JSAST *js_eval_for(JSAST *ast, map_T *stack) {
+  printf("heya\n");
+  JSAST *statement1 = ast->args->size > 0 ? (JSAST *)ast->args->items[0] : 0;
+  JSAST *statement2 = ast->args->size > 1 ? (JSAST *)ast->args->items[1] : 0;
+  JSAST *statement3 = ast->args->size > 2 ? (JSAST *)ast->args->items[2] : 0;
+
+  for (js_maybe_eval(statement1, stack);
+       is_true(js_maybe_eval(statement2, stack));
+       js_maybe_eval(statement3, stack)) {
     js_eval(ast->body, stack);
   }
 

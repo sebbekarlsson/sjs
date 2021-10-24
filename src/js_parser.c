@@ -14,6 +14,16 @@ static unsigned int should_parse_statement(JSParser *parser) {
          token->type == TOKEN_VAR || token->type == TOKEN_LET;
 }
 
+static unsigned int should_parse_definition(JSParser *parser) {
+  JSToken *token = parser->token;
+  if (token == 0)
+    return 0;
+
+  return token->type == TOKEN_WHILE || token->type == TOKEN_FUNCTION ||
+         token->type == TOKEN_CONST || token->type == TOKEN_VAR ||
+         token->type == TOKEN_LET;
+}
+
 JSParser *init_js_parser(JSLexer *lexer) {
   JSParser *parser = NEW(JSParser);
   parser->lexer = lexer;
@@ -183,11 +193,31 @@ JSAST *js_parser_parse_while(JSParser *parser) {
   return ast;
 }
 JSAST *js_parser_parse_for(JSParser *parser) {
-  printf("WARNING: `for` is not implemented.\n");
-  return 0;
+  JSAST *ast = init_js_ast(JS_AST_FOR);
+  js_parser_eat(parser, TOKEN_FOR);
+  js_parser_eat(parser, TOKEN_LPAREN);
+  if (parser->token->type != TOKEN_RPAREN) {
+    js_parser_parse_multiple(parser, ast->args, TOKEN_SEMI);
+  }
+  js_parser_eat(parser, TOKEN_RPAREN);
+
+  if (parser->token->type == TOKEN_LBRACE) {
+    js_parser_eat(parser, TOKEN_LBRACE);
+
+    if (parser->token->type != TOKEN_RBRACE) {
+      ast->body = js_parser_parse_body(parser);
+    }
+    js_parser_eat(parser, TOKEN_RBRACE);
+  } else {
+    ast->body = js_parser_parse_expr(parser);
+  }
+  return ast;
 }
 
 JSAST *js_parser_parse_factor(JSParser *parser) {
+  if (should_parse_definition(parser)) {
+    return js_parser_parse_definition(parser);
+  }
   if (parser->token->type == TOKEN_LBRACE) {
     return js_parser_parse_object(parser);
   }

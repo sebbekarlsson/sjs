@@ -3,6 +3,7 @@
 #include <js/js_AST.h>
 
 JSAST *js_eval(JSAST *ast, map_T *stack);
+JSAST *js_maybe_eval(JSAST *ast, map_T *stack);
 JSAST *js_eval_compound(JSAST *ast, map_T *stack);
 JSAST *js_eval_statement(JSAST *ast, map_T *stack);
 JSAST *js_eval_call(JSAST *ast, map_T *stack);
@@ -12,6 +13,7 @@ JSAST *js_eval_assign(JSAST *ast, map_T *stack);
 JSAST *js_eval_function(JSAST *ast, map_T *stack);
 JSAST *js_eval_if(JSAST *ast, map_T *stack);
 JSAST *js_eval_while(JSAST *ast, map_T *stack);
+JSAST *js_eval_for(JSAST *ast, map_T *stack);
 JSAST *js_eval_binop(JSAST *ast, map_T *stack);
 JSAST *js_eval_dot(JSAST *ast, map_T *stack);
 JSAST *js_eval_unop(JSAST *ast, map_T *stack);

@@ -122,7 +122,8 @@
         "JS_AST_ELSE",
         "JS_AST_BINOP",
         "JS_AST_UNOP",
-        "JS_AST_WHILE"
+        "JS_AST_WHILE",
+        "JS_AST_FOR"
     ],
     "nrJsEvents": 507,
     "jsEvents": [
