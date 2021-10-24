@@ -23,7 +23,19 @@ void stack_pop(map_T *stack, const char *key) {
     float y = right->value_num;                                                \
     JSAST *name = init_js_ast_result(JS_AST_NUMBER);                           \
     name->value_num = x op y;                                                  \
-    name->value_int = name->value_num;                                         \
+    name->value_int = (int)name->value_num;                                    \
+    return name;                                                               \
+  }
+
+#define MATH_OP_F_1(name, ast, op, y, stack)                                   \
+  {                                                                            \
+    JSAST *left = js_eval(ast, stack);                                         \
+    float x = left->value_num;                                                 \
+    JSAST *name = init_js_ast_result(JS_AST_NUMBER);                           \
+    name->value_num = x op y;                                                  \
+    name->value_int = (int)name->value_num;                                    \
+    left->value_num = name->value_num;                                         \
+    left->value_int = name->value_int;                                         \
     return name;                                                               \
   }
 
@@ -450,8 +462,42 @@ JSAST *js_eval_property_access(JSAST *ast, map_T *stack) {
   return result ? result : init_js_ast_result(JS_AST_UNDEFINED);
 }
 
+JSAST *js_eval_unop_left(JSAST *ast, map_T *stack) {
+  if (ast->left == 0) {
+    printf("Error: Eval unop, left is 0\n");
+  }
+  JSAST *value = js_eval(ast->left, stack);
+
+  if (value != 0) {
+    switch (ast->token_type) {
+    case TOKEN_INCREMENT:
+      MATH_OP_F_1(result, value, +, 1, stack);
+      break;
+    case TOKEN_DECREMENT:
+      MATH_OP_F_1(result, value, -, 1, stack);
+      break;
+    default: {
+      printf("Error %s\n", js_token_type_to_str(ast->token_type));
+      exit(1);
+    }
+    }
+
+    return value;
+  }
+
+  return ast->left;
+}
+
 // TODO: implement
+JSAST *js_eval_unop_right(JSAST *ast, map_T *stack) {
+  return init_js_ast_result(JS_AST_UNDEFINED);
+}
+
 JSAST *js_eval_unop(JSAST *ast, map_T *stack) {
+  if (ast->left)
+    return js_eval_unop_left(ast, stack);
+  if (ast->right)
+    return js_eval_unop_right(ast, stack);
   return init_js_ast_result(JS_AST_UNDEFINED);
 }
 

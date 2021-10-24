@@ -146,8 +146,16 @@ JSToken *js_lexer_get_next_token(JSLexer *lexer) {
       return js_lexer_tok_n(lexer, TOKEN_PLUS_EQUALS, 2);
     }
 
+    if (lexer->c == '+' && js_lexer_peek(lexer, 1) == '+') {
+      return js_lexer_tok_n(lexer, TOKEN_INCREMENT, 2);
+    }
+
     if (lexer->c == '-' && js_lexer_peek(lexer, 1) == '=') {
       return js_lexer_tok_n(lexer, TOKEN_MINUS_EQUALS, 2);
+    }
+
+    if (lexer->c == '-' && js_lexer_peek(lexer, 1) == '-') {
+      return js_lexer_tok_n(lexer, TOKEN_DECREMENT, 2);
     }
 
     switch (lexer->c) {

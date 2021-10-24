@@ -236,6 +236,7 @@ JSAST *js_parser_parse_factor(JSParser *parser) {
   if (parser->token->type == TOKEN_LBRACKET) {
     return js_parser_parse_array(parser);
   }
+
   if (parser->token->type == TOKEN_LPAREN) {
     js_parser_eat(parser, TOKEN_LPAREN);
     JSAST *ast = 0;
@@ -412,6 +413,15 @@ JSAST *js_parser_parse_expr(JSParser *parser) {
     js_parser_eat(parser, parser->token->type);
     binop->right = js_parser_parse_expr(parser);
     left = binop;
+  }
+
+  while (left && (parser->token->type == TOKEN_INCREMENT ||
+                  parser->token->type == TOKEN_DECREMENT)) {
+    JSAST *unop = init_js_ast(JS_AST_UNOP);
+    unop->token_type = parser->token->type;
+    js_parser_eat(parser, parser->token->type);
+    unop->left = left;
+    left = unop;
   }
 
   return left;
