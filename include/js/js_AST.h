@@ -46,4 +46,6 @@ void js_ast_free(JSAST *ast);
 void js_ast_maybe_free(JSAST *ast);
 
 char *js_ast_str_value(JSAST *ast);
+
+char *js_ast_to_string(JSAST *ast);
 #endif

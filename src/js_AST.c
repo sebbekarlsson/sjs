@@ -1,5 +1,6 @@
 #include <js/builtins/array.h>
 #include <js/js_AST.h>
+#include <js/js_string.h>
 #include <js/macros.h>
 #include <stdio.h>
 #include <string.h>
@@ -86,6 +87,106 @@ void js_ast_free(JSAST *ast) {
 
   _free_ast_list(ast->args);
   _free_ast_list(ast->children);
+}
+
+char *js_ast_array_to_string(JSAST *ast) {
+  char *str = 0;
+  js_str_append(&str, "[");
+  for (uint32_t i = 0; i < ast->children->size; i++) {
+    JSAST *child = (JSAST *)ast->children->items[i];
+    if (child == 0)
+      continue;
+    char *childstr = js_ast_to_string(child);
+
+    if (childstr) {
+      js_str_append(&str, childstr);
+      free(childstr);
+    }
+
+    if (i < ast->children->size - 1) {
+      js_str_append(&str, ",");
+    }
+  }
+  js_str_append(&str, "]");
+
+  return str;
+}
+char *js_ast_object_to_string(JSAST *ast) {
+  char *str = 0;
+  char **keys = 0;
+  unsigned int length = 0;
+
+  map_get_keys(ast->keyvalue, &keys, &length);
+
+  js_str_append(&str, "{\n");
+
+  for (unsigned int i = 0; i < length; i++) {
+    const char *k = (const char *)keys[i];
+    JSAST *child = (JSAST *)map_get_value(ast->keyvalue, k);
+    if (child == 0)
+      continue;
+
+    char *childstr = js_ast_to_string(child);
+
+    js_str_append(&str, k);
+    js_str_append(&str, ": ");
+    if (childstr) {
+      js_str_append(&str, childstr);
+      free(childstr);
+    }
+
+    if (i < length - 1) {
+      js_str_append(&str, ",\n");
+    }
+  }
+
+  js_str_append(&str, "\n}");
+
+  return str;
+}
+char *js_ast_function_to_string(JSAST *ast) {
+  char *str = 0;
+  js_str_append(&str, "ƒ ");
+  char *name = js_ast_str_value(ast);
+  if (name) {
+    js_str_append(&str, name);
+    free(name);
+  }
+  js_str_append(&str, "(");
+  for (uint32_t i = 0; i < ast->args->size; i++) {
+    JSAST *child = (JSAST *)ast->args->items[i];
+    if (child == 0)
+      continue;
+    char *childstr = js_ast_to_string(child);
+
+    if (childstr) {
+      js_str_append(&str, childstr);
+      free(childstr);
+    }
+
+    if (i < ast->args->size - 1) {
+      js_str_append(&str, ",");
+    }
+  }
+  js_str_append(&str, ")");
+  return str;
+}
+
+char *js_ast_to_string(JSAST *ast) {
+  switch (ast->type) {
+  case JS_AST_ARRAY:
+    return js_ast_array_to_string(ast);
+    break;
+  case JS_AST_OBJECT:
+    return js_ast_object_to_string(ast);
+    break;
+  case JS_AST_FUNCTION:
+    return js_ast_function_to_string(ast);
+    break;
+  default: { return js_ast_str_value(ast); }
+  }
+
+  return js_ast_str_value(ast);
 }
 
 void js_ast_maybe_free(JSAST *ast) {

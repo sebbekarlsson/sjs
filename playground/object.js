@@ -3,6 +3,8 @@ const person = {
   "age": 33
 };
 
+console.log(person);
+
 console.log("---")
 console.log(person["name"]);
 console.log("---")
