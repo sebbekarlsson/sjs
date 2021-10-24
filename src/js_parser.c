@@ -245,7 +245,17 @@ JSAST *js_parser_parse_factor(JSParser *parser) {
     }
     js_parser_eat(parser, TOKEN_RPAREN);
 
-    // TODO: need a while loop here to parse binop after `(` and `)`.
+    if (ast && (parser->token->type == TOKEN_DIV ||
+                parser->token->type == TOKEN_STAR ||
+                parser->token->type == TOKEN_MINUS ||
+                parser->token->type == TOKEN_PLUS)) {
+      JSAST *binop = init_js_ast(JS_AST_BINOP);
+      binop->left = ast;
+      binop->token_type = parser->token->type;
+      js_parser_eat(parser, parser->token->type);
+      binop->right = js_parser_parse_expr(parser);
+      ast = binop;
+    }
 
     if (parser->token->type == TOKEN_ARROW_RIGHT) {
       js_parser_eat(parser, TOKEN_ARROW_RIGHT);
