@@ -161,8 +161,26 @@ JSAST *js_parser_parse_if(JSParser *parser) {
   return ast;
 }
 JSAST *js_parser_parse_while(JSParser *parser) {
-  printf("WARNING: `while` is not implemented.\n");
-  return 0;
+  JSAST *ast = init_js_ast(JS_AST_WHILE);
+  js_parser_eat(parser, TOKEN_WHILE);
+  js_parser_eat(parser, TOKEN_LPAREN);
+  if (parser->token->type != TOKEN_RPAREN) {
+    ast->expr = js_parser_parse_expr(parser);
+  }
+  js_parser_eat(parser, TOKEN_RPAREN);
+
+  if (parser->token->type == TOKEN_LBRACE) {
+    js_parser_eat(parser, TOKEN_LBRACE);
+
+    if (parser->token->type != TOKEN_RBRACE) {
+      ast->body = js_parser_parse_body(parser);
+    }
+    js_parser_eat(parser, TOKEN_RBRACE);
+  } else {
+    ast->body = js_parser_parse_expr(parser);
+  }
+
+  return ast;
 }
 JSAST *js_parser_parse_for(JSParser *parser) {
   printf("WARNING: `for` is not implemented.\n");
@@ -226,6 +244,16 @@ JSAST *js_parser_parse_factor(JSParser *parser) {
 
 JSAST *js_parser_parse_term(JSParser *parser) {
   JSAST *left = js_parser_parse_factor(parser);
+
+  while (left && (parser->token->type == TOKEN_MINUS_EQUALS ||
+                  parser->token->type == TOKEN_PLUS_EQUALS)) {
+    JSAST *assign = init_js_ast(JS_AST_ASSIGNMENT);
+    assign->left = left;
+    assign->token_type = parser->token->type;
+    js_parser_eat(parser, parser->token->type);
+    assign->right = js_parser_parse_expr(parser);
+    left = assign;
+  }
 
   while (left && (parser->token->type == TOKEN_STAR ||
                   parser->token->type == TOKEN_DIV)) {

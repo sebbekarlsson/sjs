@@ -82,6 +82,9 @@ JSAST *js_eval(JSAST *ast, map_T *stack) {
   case JS_AST_IF:
     return js_eval_if(ast, stack);
     break;
+  case JS_AST_WHILE:
+    return js_eval_while(ast, stack);
+    break;
   default: { return ast; }
   }
 
@@ -93,7 +96,7 @@ JSAST *js_eval_compound(JSAST *ast, map_T *stack) {
     if (child == 0)
       continue;
 
-    ast->children->items[i] = (JSAST *)js_eval(child, stack);
+    js_eval(child, stack);
   }
 
   return ast;
@@ -115,14 +118,11 @@ JSAST *js_eval_call(JSAST *ast, map_T *stack) {
     printf("Error: undefined\n");
   }
 
-  if (ast->left) {
-    ast->left = js_eval(ast->left, stack);
-  }
+  JSAST *left = js_eval(ast->left, stack);
 
-  if (ast->left && ast->left->type != JS_AST_FUNCTION) {
+  if (left && left->type != JS_AST_FUNCTION) {
     if (ast->left->value_str) {
-      printf("`%s` (%d) is not a function.\n", ast->left->value_str,
-             ast->left->type);
+      printf("`%s` (%d) is not a function.\n", left->value_str, left->type);
       exit(1);
     } else {
       printf("Error: Trying to call something which is not a function.\n");
@@ -133,7 +133,7 @@ JSAST *js_eval_call(JSAST *ast, map_T *stack) {
   stack_pop(stack, STACK_ADDR_RETURN);
   JSAST *result = 0;
 
-  list_T *function_args = ast->left->args;
+  list_T *function_args = left->args;
 
   list_T *evaluated_args = init_list(sizeof(JSAST *));
 
@@ -149,27 +149,29 @@ JSAST *js_eval_call(JSAST *ast, map_T *stack) {
     map_set(stack, farg->value_str, evaluated);
   }
 
-  if (ast->left->fptr != 0) {
-    result = (JSAST *)ast->left->fptr(evaluated_args, stack);
+  if (left->fptr != 0) {
+    result = (JSAST *)left->fptr(evaluated_args, stack);
     list_free_shallow(evaluated_args);
   } else if (ast->left->body) {
-    result = js_eval(ast->left->body, stack);
+    result = js_eval(left->body, stack);
   }
 
-  if (ast->right) {
-    ast->right = js_eval(ast->right, stack);
-  }
+  // if (ast->right) {
+  //  ast->right = js_eval(ast->right, stack);
+  //}
 
   JSAST *ret = (JSAST *)map_get_value(stack, STACK_ADDR_RETURN);
   if (ret) {
     return ret;
-  };
+  }
 
   return result ? result : init_js_ast_result(JS_AST_UNDEFINED);
 }
 JSAST *js_eval_string(JSAST *ast, map_T *stack) { return ast; }
 JSAST *js_eval_number(JSAST *ast, map_T *stack) { return ast; }
 JSAST *js_eval_function(JSAST *ast, map_T *stack) {
+  if (ast->fptr != 0)
+    return;
   /*  for (uint32_t i = 0; i < ast->args->size; i++) {
       JSAST* arg = (JSAST*)ast->args->items[i];
       if (arg == 0) continue;
@@ -212,6 +214,14 @@ JSAST *js_eval_if(JSAST *ast, map_T *stack) {
   return ast;
 }
 
+JSAST *js_eval_while(JSAST *ast, map_T *stack) {
+  while (is_true(js_eval(ast->expr, stack)) && ast->body != 0) {
+    js_eval(ast->body, stack);
+  }
+
+  return ast;
+}
+
 JSAST *js_eval_definition(JSAST *ast, map_T *stack) {
   if (ast->right && ast->right->type == JS_AST_FUNCTION) {
     ast->right->value_str =
@@ -239,12 +249,26 @@ JSAST *js_eval_assignment(JSAST *ast, map_T *stack) {
     left->value_str = strdup(right->value_str);
   }
 
-  left->value_int = right->value_int;
-  left->value_num = right->value_num;
+  switch (ast->token_type) {
+  case TOKEN_EQUALS: {
+    left->value_int = right->value_int;
+    left->value_num = right->value_num;
+  } break;
+  case TOKEN_MINUS_EQUALS: {
+    left->value_int -= right->value_int;
+    left->value_num -= right->value_num;
+  } break;
+  case TOKEN_PLUS_EQUALS: {
+    left->value_int += right->value_int;
+    left->value_num += right->value_num;
+  } break;
+  default: {
+    printf("Error: %s\n", js_token_type_to_str(ast->token_type));
+    exit(1);
+  } break;
+  }
 
   return right;
-
-  // return js_eval_definition(ast, stack);
 }
 
 JSAST *js_eval_binop(JSAST *ast, map_T *stack) {
