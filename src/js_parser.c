@@ -306,7 +306,7 @@ JSAST *js_parser_parse_factor(JSParser *parser) {
   }
   }
 
-  return 0;
+  return init_js_ast(JS_AST_UNDEFINED);
 }
 
 JSAST *js_parser_parse_term(JSParser *parser) {

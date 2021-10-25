@@ -1,3 +1,6 @@
+include(FetchContent)
+
+
 function(build_custom TARGETZ NAME CMD DEPENDS OUT)
   separate_arguments(EX UNIX_COMMAND PROGRAM SEPARATE_ARGS ${CMD})
   message(${CMD})
@@ -17,7 +20,7 @@ function (generate_files)
     GIT_REPOSITORY https://github.com/sebbekarlsson/gpp.git
     )
   FetchContent_MakeAvailable(gpp)
-  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/context.json DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+  file(COPY ${xjs_SOURCE_DIR}/context.json DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 
   file(GLOB js_builtins ${CMAKE_CURRENT_SOURCE_DIR}/src/builtins/*.gpp)
@@ -36,4 +39,5 @@ function (generate_files)
     )
   endforeach()
   include_directories(${CMAKE_CURRENT_BINARY_DIR}/generated)
+  include_directories(${xjs_BINARY_DIR}/generated)
 endfunction()
