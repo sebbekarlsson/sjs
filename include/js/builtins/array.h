@@ -5,5 +5,6 @@
 JSAST* init_js_builtin_array_prototype(JSAST* child);
 JSAST* js_builtin_array_constructor(JSAST* prototype);
 void *builtin_array_map(void* ptr, list_T *args, map_T *stack);
+void *builtin_array_from(void* ptr, list_T *args, map_T *stack);
 JSAST *init_js_builtin_array();
 #endif

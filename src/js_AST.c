@@ -6,17 +6,15 @@
 #include <stdio.h>
 #include <string.h>
 
-JSAST *init_js_ast(JSASTType type) {
-
+JSAST *js_ast_constructor(JSASTType type) {
   JSAST *ast = NEW(JSAST);
   ast->type = type;
-  ast->children = init_list(sizeof(JSAST *));
-  ast->args = init_list(sizeof(JSAST *));
   ast->keyvalue = NEW_MAP();
   ast->is_result = 0;
   ast->prototype = 0;
   ast->fptr = 0;
-
+  ast->value_int_ptr = 0;
+  ast->value_int_size_ptr = 0;
   switch (type) {
   case JS_AST_ARRAY: {
     ast->prototype = init_js_builtin_array_prototype(ast);
@@ -28,9 +26,16 @@ JSAST *init_js_ast(JSASTType type) {
     // noop
   } break;
   }
+}
 
+JSAST *init_js_ast(JSASTType type) {
+  JSAST *ast = js_ast_constructor(type);
+  ast->children = init_list(sizeof(JSAST *));
+  ast->args = init_list(sizeof(JSAST *));
   return ast;
 }
+
+JSAST *init_js_ast_blank(JSASTType type) { return js_ast_constructor(type); }
 
 JSAST *init_js_ast_result(JSASTType type) {
   JSAST *ast = init_js_ast(type);
@@ -206,4 +211,27 @@ void js_ast_maybe_free(JSAST *ast) {
   if (ast->is_result == 0)
     return;
   js_ast_free(ast);
+}
+
+list_T *js_ast_to_array(JSAST *ast) {
+  if (ast == 0)
+    return 0;
+
+  if (ast->type == JS_AST_STRING && ast->value_str != 0) {
+    list_T *newlist = init_list(sizeof(JSAST *));
+    for (size_t i = 0; i < ast->string_length; i++) {
+      JSAST *stringast = init_js_ast_result(JS_AST_STRING);
+      char *strval = char_to_str(ast->value_str[i]);
+      js_ast_set_value_str(stringast, strval);
+      free(strval);
+      list_push(newlist, stringast);
+    }
+
+    return newlist;
+  }
+
+  if (ast->children)
+    return ast->children;
+
+  return 0;
 }

@@ -63,7 +63,15 @@ JSAST *js_parser_parse_str(JSParser *parser) {
 JSAST *js_parser_parse_id(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_ID);
   ast->value_str = strdup(parser->token->value);
-  js_parser_eat(parser, TOKEN_ID);
+
+  if (parser->token->type == TOKEN_ID) {
+    js_parser_eat(parser, TOKEN_ID);
+  } else if (parser->token->type == TOKEN_FROM) {
+    js_parser_eat(parser, TOKEN_FROM);
+  } else {
+    printf("parse_id: Unexpected token `%s`",
+           js_token_type_to_str(parser->token->type));
+  }
   return ast;
 }
 JSAST *js_parser_parse_array(JSParser *parser) {
@@ -287,6 +295,7 @@ JSAST *js_parser_parse_factor(JSParser *parser) {
     return js_parser_parse_num(parser);
     break;
   case TOKEN_ID:
+  case TOKEN_FROM:
     return js_parser_parse_id(parser);
     break;
   default: {

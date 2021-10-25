@@ -15,10 +15,27 @@ void stack_pop(map_T *stack, const char *key) {
   js_ast_maybe_free(ast);
 }
 
+JSAST *js_eval_string_concat(JSAST *left, JSAST *right) {
+  JSAST *new_string = init_js_ast(JS_AST_STRING);
+
+  char *strleft = js_ast_str_value(left);
+  char *strright = js_ast_str_value(right);
+
+  js_str_append(&new_string->value_str, strleft);
+  js_str_append(&new_string->value_str, strright);
+
+  free(strleft);
+  free(strright);
+
+  return new_string;
+}
+
 #define MATH_OP_F(name, ast, op, stack)                                        \
   {                                                                            \
     JSAST *left = js_eval(ast->left, stack);                                   \
     JSAST *right = js_eval(ast->right, stack);                                 \
+    if (left->type == JS_AST_STRING || right->type == JS_AST_STRING)           \
+      return js_eval_string_concat(left, right);                               \
     float x = left->value_num;                                                 \
     float y = right->value_num;                                                \
     JSAST *name = init_js_ast_result(JS_AST_NUMBER);                           \
@@ -445,12 +462,15 @@ JSAST *js_eval_property_access(JSAST *ast, map_T *stack) {
     exit(1);
   }
 
+  list_T *children = js_ast_to_array(left);
+  if (children == 0)
+    return init_js_ast_result(JS_AST_UNDEFINED);
+
   JSAST *result = 0;
   JSAST *indexast = js_eval((JSAST *)ast->args->items[0], stack);
   int index = indexast->value_int;
-  result = index + 1 > left->children->size
-               ? init_js_ast_result(JS_AST_UNDEFINED)
-               : (JSAST *)left->children->items[index];
+  result = index + 1 > children->size ? init_js_ast_result(JS_AST_UNDEFINED)
+                                      : (JSAST *)children->items[index];
 
   if (ast->right) {
     right = js_eval(ast->right, stack);

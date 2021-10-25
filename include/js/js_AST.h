@@ -39,7 +39,11 @@ typedef struct JS_AST_TUPLE_STRUCT {
 
 JSAST *init_js_ast(JSASTType type);
 
+JSAST *init_js_ast_blank(JSASTType type);
+
 JSAST *init_js_ast_result(JSASTType type);
+
+list_T *js_ast_to_array(JSAST *ast);
 
 void js_ast_set_value_str(JSAST *ast, char *value_str);
 
