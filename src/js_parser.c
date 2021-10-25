@@ -56,7 +56,7 @@ JSAST *js_parser_parse_num(JSParser *parser) {
 JSAST *js_parser_parse_str(JSParser *parser) {
 
   JSAST *ast = init_js_ast(JS_AST_STRING);
-  ast->value_str = strdup(parser->token->value);
+  js_ast_set_value_str(ast, parser->token->value);
   js_parser_eat(parser, TOKEN_STRING);
   return ast;
 }

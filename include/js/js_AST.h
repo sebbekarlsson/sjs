@@ -21,6 +21,7 @@ typedef struct JS_AST_STRUCT {
   int value_int;
   uint32_t *value_int_ptr;
   size_t *value_int_size_ptr;
+  size_t string_length;
   char *value_str;
   list_T *children;
   list_T *args;

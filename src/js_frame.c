@@ -1,5 +1,6 @@
 #include <js/builtins/array.h>
 #include <js/builtins/console/console.h>
+#include <js/builtins/string.h>
 #include <js/js_frame.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -12,6 +13,9 @@ map_T *setup_js_frame() {
 
   JSAST *arr = init_js_builtin_array();
   map_set(frame, "Array", arr);
+
+  JSAST *str = init_js_builtin_string();
+  map_set(frame, "String", str);
 
   // TODO: implement String
   // TODO: implement Object

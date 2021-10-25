@@ -24,5 +24,8 @@ JSAST *js_eval_id(JSAST *ast, map_T *stack);
 JSAST *js_eval_definition(JSAST *ast, map_T *stack);
 JSAST *js_eval_assignment(JSAST *ast, map_T *stack);
 
+JSAST *js_call_function(JSAST *self, JSAST *ast, JSFunction *fptr,
+                        list_T *call_args, list_T *expected_args, map_T *stack);
+
 void stack_pop(map_T *stack, const char *key);
 #endif
