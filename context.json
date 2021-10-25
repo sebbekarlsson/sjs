@@ -661,6 +661,11 @@
             "name": "map",
             "ptr": "builtin_array_map",
             "args": ["map_func"]
+        },
+        {
+            "name": "forEach",
+            "ptr": "builtin_array_foreach",
+            "args": ["foreach_func"]
         }
     ]
 }

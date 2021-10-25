@@ -25,7 +25,7 @@ JSAST *init_js_builtin_console() {
   JSAST *id = init_js_ast(JS_AST_ID);
   js_ast_set_value_str(id, "value");
   list_push(func->args, id);
-  func->fptr = (JSFunction*)builtin_console_log;
+  func->fptr = (JSFunction *)builtin_console_log;
   js_ast_set_value_str(func, "log");
 
   map_set(console->keyvalue, "log", func);

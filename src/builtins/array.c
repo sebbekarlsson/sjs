@@ -4,9 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// functions
-#include <array.gpp.h>
-
 void *builtin_array_map(void *ptr, list_T *args, map_T *stack) {
   JSAST *arr = ptr;
 
@@ -38,6 +35,34 @@ void *builtin_array_map(void *ptr, list_T *args, map_T *stack) {
 
   return new_arr;
 }
+
+void *builtin_array_foreach(void *ptr, list_T *args, map_T *stack) {
+  JSAST *arr = ptr;
+
+  JSAST *arg1 = args->items[0];
+
+  list_T *children = js_ast_to_array(ptr);
+
+  if (children == 0)
+    return init_js_ast_result(JS_AST_UNDEFINED);
+
+  list_T *call_args = init_list(sizeof(JSAST *));
+
+  for (uint32_t i = 0; i < children->size; i++) {
+    list_clear(call_args);
+    JSAST *child = (JSAST *)children->items[i];
+    JSAST *evaluated = js_eval(child, stack);
+    list_push(call_args, evaluated);
+
+    JSAST *result =
+        js_call_function(arg1, arg1, 0, call_args, arg1->args, stack);
+  }
+
+  return init_js_ast_result(JS_AST_UNDEFINED);
+}
+
+// functions
+#include <array.gpp.h>
 
 void *builtin_array_from(void *ptr, list_T *args, map_T *stack) {
   JSAST *arg1 = args->items[0];
