@@ -26,6 +26,8 @@ JSAST *js_ast_constructor(JSASTType type) {
     // noop
   } break;
   }
+
+  return ast;
 }
 
 JSAST *init_js_ast(JSASTType type) {
@@ -120,7 +122,7 @@ char *js_ast_array_to_string(JSAST *ast) {
     }
 
     if (i < ast->children->size - 1) {
-      js_str_append(&str, ",");
+      js_str_append(&str, ", ");
     }
   }
   js_str_append(&str, "]");
@@ -134,7 +136,7 @@ char *js_ast_object_to_string(JSAST *ast) {
 
   map_get_keys(ast->keyvalue, &keys, &length);
 
-  js_str_append(&str, "{\n");
+  js_str_append(&str, "{");
 
   for (unsigned int i = 0; i < length; i++) {
     const char *k = (const char *)keys[i];
@@ -152,11 +154,11 @@ char *js_ast_object_to_string(JSAST *ast) {
     }
 
     if (i < length - 1) {
-      js_str_append(&str, ",\n");
+      js_str_append(&str, ", ");
     }
   }
 
-  js_str_append(&str, "\n}");
+  js_str_append(&str, "}");
 
   return str;
 }

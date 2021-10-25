@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// functions
+#include <array.gpp.h>
+
 void *builtin_array_map(void *ptr, list_T *args, map_T *stack) {
   JSAST *arr = ptr;
 
@@ -44,16 +47,6 @@ void *builtin_array_from(void *ptr, list_T *args, map_T *stack) {
   return newarr;
 }
 
-void js_builtin_array_init_prototype_functions(JSAST *prototype) {
-  JSAST *map_func = init_js_ast(JS_AST_FUNCTION);
-  JSAST *id = init_js_ast(JS_AST_ID);
-  js_ast_set_value_str(id, "map_func");
-  list_push(map_func->args, id);
-  map_func->fptr = builtin_array_map;
-  js_ast_set_value_str(map_func, "map");
-  map_set(prototype->keyvalue, "map", map_func);
-}
-
 JSAST *js_builtin_array_constructor(JSAST *prototype) {
   js_builtin_array_init_prototype_functions(prototype);
   return prototype;
@@ -70,16 +63,6 @@ JSAST *init_js_builtin_array_prototype(JSAST *child) {
   map_set(prototype->keyvalue, "length", length_ast);
 
   return js_builtin_array_constructor(prototype);
-}
-
-void js_builtin_array_init_static_functions(JSAST *obj) {
-  JSAST *from_func = init_js_ast(JS_AST_FUNCTION);
-  JSAST *id = init_js_ast(JS_AST_ID);
-  js_ast_set_value_str(id, "value");
-  list_push(from_func->args, id);
-  from_func->fptr = builtin_array_from;
-  js_ast_set_value_str(from_func, "from");
-  map_set(obj->keyvalue, "from", from_func);
 }
 
 JSAST *init_js_builtin_array() {

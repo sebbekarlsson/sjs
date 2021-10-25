@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+include(build_custom)
 
 project(xjs)
 
@@ -60,43 +62,6 @@ FetchContent_Declare(
   # GIT_TAG master
 )
 FetchContent_MakeAvailable(hashmap_static)
-
-
-function (generate_files)
-  FetchContent_Declare(
-    gpp
-    GIT_REPOSITORY https://github.com/sebbekarlsson/gpp.git
-    )
-  FetchContent_MakeAvailable(gpp)
-  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/context.json DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
-
-  file(GLOB js_enums RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/enums ${CMAKE_CURRENT_SOURCE_DIR}/src/enums/*.gpp)
-  foreach(gpp_file ${js_enums})
-    message(${gpp_file})
-    set(outfile ${CMAKE_CURRENT_BINARY_DIR}/enums/${gpp_file}.h)
-    list(APPEND outfiles ${outfile})
-    set(command_to_run mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/enums && gpp ${CMAKE_CURRENT_SOURCE_DIR}/src/enums/${gpp_file} > ${outfile})
-    message(${command_to_run})
-    add_custom_command(OUTPUT ${outfile}
-      COMMAND ${command_to_run}
-    )
-endforeach()
-
-file(GLOB js_builtins RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/builtins ${CMAKE_CURRENT_SOURCE_DIR}/src/builtins/*.gpp)
-  foreach(gpp_file ${js_builtins})
-    message(${gpp_file})
-    set(outfile ${CMAKE_CURRENT_BINARY_DIR}/builtins/${gpp_file}.h)
-    list(APPEND outfiles ${outfile})
-    set(command_to_run mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/builtins && gpp ${CMAKE_CURRENT_SOURCE_DIR}/src/builtins/${gpp_file} > ${outfile})
-    message(${command_to_run})
-    add_custom_command(OUTPUT ${outfile}
-      COMMAND ${command_to_run}
-    )
-endforeach()
-add_custom_target(generate_all_files ALL DEPENDS ${outfiles})
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/enums)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/builtins)
-endfunction()
 
 
 generate_files()

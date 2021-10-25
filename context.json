@@ -648,5 +648,19 @@
             "ptr": "builtin_object_values",
             "args": ["value"]
         }
+    ],
+    "array_builtins": [
+        {
+            "name": "from",
+            "ptr": "builtin_array_from",
+            "args": ["value"]
+        }
+    ],
+    "array_prototype_builtins": [
+        {
+            "name": "map",
+            "ptr": "builtin_array_map",
+            "args": ["map_func"]
+        }
     ]
 }
