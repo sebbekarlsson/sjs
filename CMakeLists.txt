@@ -68,8 +68,9 @@ function (generate_files)
     GIT_REPOSITORY https://github.com/sebbekarlsson/gpp.git
     )
   FetchContent_MakeAvailable(gpp)
-  file(GLOB js_enums RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/enums ${CMAKE_CURRENT_SOURCE_DIR}/src/enums/*.gpp)
   file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/context.json DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+
+  file(GLOB js_enums RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/enums ${CMAKE_CURRENT_SOURCE_DIR}/src/enums/*.gpp)
   foreach(gpp_file ${js_enums})
     message(${gpp_file})
     set(outfile ${CMAKE_CURRENT_BINARY_DIR}/enums/${gpp_file}.h)
@@ -80,8 +81,21 @@ function (generate_files)
       COMMAND ${command_to_run}
     )
 endforeach()
+
+file(GLOB js_builtins RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src/builtins ${CMAKE_CURRENT_SOURCE_DIR}/src/builtins/*.gpp)
+  foreach(gpp_file ${js_builtins})
+    message(${gpp_file})
+    set(outfile ${CMAKE_CURRENT_BINARY_DIR}/builtins/${gpp_file}.h)
+    list(APPEND outfiles ${outfile})
+    set(command_to_run mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/builtins && gpp ${CMAKE_CURRENT_SOURCE_DIR}/src/builtins/${gpp_file} > ${outfile})
+    message(${command_to_run})
+    add_custom_command(OUTPUT ${outfile}
+      COMMAND ${command_to_run}
+    )
+endforeach()
 add_custom_target(generate_all_files ALL DEPENDS ${outfiles})
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/enums)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/builtins)
 endfunction()
 
 

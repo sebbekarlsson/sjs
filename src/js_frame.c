@@ -1,5 +1,6 @@
 #include <js/builtins/array.h>
 #include <js/builtins/console/console.h>
+#include <js/builtins/object.h>
 #include <js/builtins/string.h>
 #include <js/js_frame.h>
 #include <stdint.h>
@@ -17,8 +18,10 @@ map_T *setup_js_frame() {
   JSAST *str = init_js_builtin_string();
   map_set(frame, "String", str);
 
-  // TODO: implement String
-  // TODO: implement Object
+  JSAST *obj = init_js_builtin_object();
+  map_set(frame, "Object", obj);
+
+  // TODO: implement Boolean
   // TODO: implement Boolean
   // TODO: implement Math
   // TODO: implement Function

@@ -636,5 +636,17 @@
         "ValueChange",
         "notification",
         "notification"
+    ],
+    "object_builtins": [
+        {
+            "name": "keys",
+            "ptr": "builtin_object_keys",
+            "args": ["value"]
+        },
+        {
+            "name": "values",
+            "ptr": "builtin_object_values",
+            "args": ["value"]
+        }
     ]
 }
