@@ -43,6 +43,8 @@ typedef struct JS_AST_TUPLE_STRUCT {
 
 JSAST *init_js_ast(JSASTType type);
 
+JSAST* js_ast_copy(JSAST* src);
+
 JSAST *init_js_ast_blank(JSASTType type);
 
 JSAST *init_js_ast_result(JSASTType type);
@@ -64,4 +66,5 @@ list_T *js_ast_get_keys(JSAST *ast);
 list_T *js_ast_get_keys_asts(JSAST *ast);
 
 JSIterator js_ast_iterate(JSAST *ast);
+
 #endif

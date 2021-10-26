@@ -47,6 +47,68 @@ JSAST *init_js_ast_result(JSASTType type) {
   return ast;
 }
 
+static list_T* js_copy_ast_list(list_T* list) {
+  if (list == 0) return 0;
+  list_T* newlist = init_list(list->item_size);
+
+  for (size_t i = 0; i < list->size; i++) {
+    JSAST* child = (JSAST*)list->items[i];
+    if (child == 0) continue;
+
+    list_push(newlist, js_ast_copy(child));
+  }
+
+  return newlist;
+}
+
+static map_T* js_copy_ast_map(map_T* src) {
+  map_T* copy = NEW_MAP();
+
+  char** keys = 0;
+  size_t length = 0;
+  map_get_keys(src, &keys, &length);
+
+  for (size_t i = 0; i < length; i++) {
+    char* key = keys[i];
+    if (key == 0) continue;
+    JSAST* item = (JSAST*)map_get_value(src, key);
+    if (item == 0) continue;
+    map_set(copy, key, item);
+  }
+
+  return copy;
+}
+
+JSAST* js_ast_copy(JSAST* src) {
+  if (src == 0) return 0;
+  JSAST* copy = init_js_ast(src->type);
+
+  copy->left = js_ast_copy(src->left);
+  copy->right = js_ast_copy(src->right);
+  copy->body = js_ast_copy(src->body);
+  copy->expr = js_ast_copy(src->expr);
+  copy->prototype = js_ast_copy(src->prototype);
+
+  copy->value_num = src->value_num;
+  copy->value_int = src->value_int;
+  copy->value_int_ptr = src->value_int_ptr;
+  copy->value_int_size_ptr = src->value_int_size_ptr;
+  copy->string_length = src->string_length;
+  copy->value_str_ptr = src->value_str_ptr;
+  copy->any_ptr = src->any_ptr;
+  copy->value_str = src->value_str ? strdup(src->value_str) : 0;
+  copy->children = js_copy_ast_list(src->children);
+  copy->args = js_copy_ast_list(src->args);
+  copy->keyvalue = js_copy_ast_map(src->keyvalue);
+  copy->fptr = src->fptr;
+  copy->is_result = src->is_result;
+  copy->is_true = src->is_true;
+  copy->exported = src->exported;
+  copy->token_type = src->token_type;
+
+  return copy;
+}
+
 void js_ast_set_value_str(JSAST *ast, char *value_str) {
   if (value_str == 0)
     return;
