@@ -105,6 +105,16 @@ void js_ast_free(JSAST *ast) {
     ast->right = 0;
   }
 
+  if (ast->expr != 0) {
+    js_ast_free(ast->expr);
+    ast->expr = 0;
+  }
+
+  if (ast->prototype != 0) {
+    js_ast_free(ast->prototype);
+    ast->prototype = 0;
+  }
+
   map_free(ast->keyvalue);
 
   _free_ast_list(ast->args);

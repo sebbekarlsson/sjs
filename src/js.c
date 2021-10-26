@@ -53,6 +53,18 @@ void js_execution_free(JSExecution *execution) {
     js_ast_free(execution->result);
     execution->result = 0;
   }
+
+  // TODO: implement js_ast_copy and have js_eval always return a copy.
+  // Need to do this for this to work.
+  // if (execution->root != 0) {
+  //   js_ast_free(execution->root);
+  //   execution->root = 0;
+  // }
+
+  if (execution->contents != 0) {
+    free(execution->contents);
+    execution->contents = 0;
+  }
 }
 
 JSAST *js_get_module(map_T *frame) {

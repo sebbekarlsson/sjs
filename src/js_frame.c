@@ -8,19 +8,20 @@
 #include <stdint.h>
 #include <stdio.h>
 
-const char *NAMES = {"console", "Array", "String", "Object"};
+const char *NAMES[8] = {"console", "Array", "String", "Object", "process", "__dirname", "__filename", "module"};
 
-const int NAMES_LENGTH = 4;
+const int NAMES_LENGTH = 8;
 
 void js_frame_free(map_T *frame) {
   if (frame == 0)
     return;
-  //  for (int i = 0; i < NAMES_LENGTH; i++) {
-  //    const char* name = NAMES[i];
-  //   JSAST* item = (JSAST*) map_get_value(frame, name);
-  //  map_unset(frame, name);
-  //  if (item != 0) js_ast_free(item);
-  //}
+  for (int i = 0; i < NAMES_LENGTH; i++) {
+    const char *name = NAMES[i];
+    JSAST *item = (JSAST *)map_get_value(frame, name);
+    map_unset(frame, name);
+    if (item != 0)
+      js_ast_free(item);
+  }
 
   map_free(frame);
 }
