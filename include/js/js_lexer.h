@@ -14,6 +14,8 @@ typedef struct JS_LEXER_STRUCT {
 
 JSLexer *init_js_lexer(char *src);
 
+void js_lexer_free(JSLexer *lexer);
+
 void js_lexer_advance(JSLexer *lexer);
 JSToken *js_lexer_get_next_token(JSLexer *lexer);
 void js_lexer_skip_whitespace(JSLexer *lexer);

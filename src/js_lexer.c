@@ -107,6 +107,17 @@ JSLexer *init_js_lexer(char *src) {
   return jslexer;
 }
 
+void js_lexer_free(JSLexer *lexer) {
+  if (lexer == 0)
+    return 0;
+  if (lexer->src != 0) {
+    free(lexer->src);
+    lexer->src = 0;
+  }
+
+  free(lexer);
+}
+
 void js_lexer_advance(JSLexer *lexer) {
   if (JS_LEXER_DONE(lexer) == 0) {
     lexer->i++;

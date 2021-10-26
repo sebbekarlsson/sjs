@@ -79,9 +79,14 @@ JSAST *js_builtin_array_constructor(JSAST *prototype) {
 
 JSAST *init_js_builtin_array_prototype(JSAST *child) {
   if (child == 0)
-    child = init_js_ast(JS_AST_ARRAY);
+    child = init_js_ast_result(JS_AST_ARRAY);
   JSAST *prototype = init_js_ast(JS_AST_OBJECT);
   prototype->prototype_child = child;
+
+  if (child->children == 0) {
+    printf("array_prototype: child->children == 0\n");
+    exit(1);
+  }
 
   JSAST *length_ast = init_js_ast(JS_AST_NUMBER);
   length_ast->value_int_size_ptr = &child->children->size;

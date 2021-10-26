@@ -10,6 +10,8 @@ typedef struct JS_PARSER_STRUCT {
 
 JSParser *init_js_parser(JSLexer *lexer);
 
+void js_parser_free(JSParser *parser);
+
 void js_parser_eat(JSParser *parser, JSTokenType type);
 
 JSAST *js_parser_parse_num(JSParser *parser);

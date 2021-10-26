@@ -206,6 +206,8 @@ JSAST *js_eval_call(JSAST *ast, map_T *stack) {
 }
 JSAST *js_eval_string(JSAST *ast, map_T *stack) { return ast; }
 JSAST *js_eval_number(JSAST *ast, map_T *stack) {
+  if (ast == 0)
+    return ast;
   if (ast->value_int_size_ptr != 0) {
     ast->value_int = (int)*ast->value_int_size_ptr;
     ast->value_num = (float)*ast->value_int_size_ptr;

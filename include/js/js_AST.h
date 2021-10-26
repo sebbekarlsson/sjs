@@ -2,6 +2,7 @@
 #define JS_ENGINE_AST_H
 #include <AST_TYPES.gpp.h>
 #include <hashmap/map.h>
+#include <js/js_iterator.h>
 #include <js/js_list.h>
 #include <js/js_token.h>
 #include <stdint.h>
@@ -54,4 +55,6 @@ void js_ast_maybe_free(JSAST *ast);
 char *js_ast_str_value(JSAST *ast);
 
 char *js_ast_to_string(JSAST *ast);
+
+JSIterator js_ast_iterate(JSAST *ast);
 #endif

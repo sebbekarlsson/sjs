@@ -11,6 +11,16 @@ JSToken *init_js_token(JSTokenType type, char *value) {
 
   return tok;
 }
+void js_token_free(JSToken *token) {
+  if (token == 0)
+    return;
+  if (token->value != 0) {
+    free(token->value);
+    token->value = 0;
+  }
+
+  free(token);
+}
 
 char *js_token_to_str(JSToken *token) {
   const char *typestr = JS_TOKEN_TYPE_STR[token->type];

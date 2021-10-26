@@ -33,6 +33,17 @@ JSParser *init_js_parser(JSLexer *lexer) {
   return parser;
 }
 
+void js_parser_free(JSParser *parser) {
+  if (parser == 0)
+    return 0;
+  if (parser->token != 0) {
+    js_token_free(parser->token);
+    parser->token = 0;
+  }
+
+  free(parser);
+}
+
 void js_parser_eat(JSParser *parser, JSTokenType type) {
   if (parser->token->type != type) {
     printf("Parser: Unexpected token `%s`\n", parser->token->value);
@@ -253,6 +264,11 @@ JSAST *js_parser_parse_factor(JSParser *parser) {
       js_parser_parse_multiple(parser, args, TOKEN_COMMA);
     }
     js_parser_eat(parser, TOKEN_RPAREN);
+
+    if (parser->token->type != TOKEN_ARROW_RIGHT && args->size == 1) {
+      ast = (JSAST *)args->items[0];
+      list_free_shallow(args);
+    }
 
     if (ast && (parser->token->type == TOKEN_DIV ||
                 parser->token->type == TOKEN_STAR ||

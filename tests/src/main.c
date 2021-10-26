@@ -14,6 +14,7 @@ int stdoutSave;
 char stdoutbuff[BUFFER_SIZE];
 
 void capture_stdout() {
+  memset(stdoutbuff, 0, BUFFER_SIZE * sizeof(char));
   fflush(stdout);                            // clean everything first
   stdoutSave = dup(STDOUT_FILENO);           // save the stdout state
   freopen("NUL", "a", stdout);               // redirect stdout to null pointer
@@ -44,30 +45,28 @@ void printHelloWorld() {
     assert(expr);                                                              \
   }
 
-static JSAST *ex(const char *filename, const char *expected_stdout) {
-  char *contents = get_file_contents(filename);
-
-  JSLexer *lexer = init_js_lexer(contents);
-  JSParser *parser = init_js_parser(lexer);
-
-  JSAST *root = js_parser_parse(parser);
-  map_T *frame = setup_js_frame();
-
-  capture_stdout();
-  JSAST *result = js_eval(root, frame);
-  restore_stdout();
+#define EX(name, filename, expected_stdout, should_eval) \
+  char *contents = get_file_contents(filename);\
+  JSLexer *lexer = init_js_lexer(contents);\
+  JSParser *parser = init_js_parser(lexer);\
+  JSAST *name = js_parser_parse(parser);\
+  map_T *frame = setup_js_frame();      \
+  capture_stdout();\
+  name = should_eval ? js_eval(name, frame) : name;\
+  restore_stdout();                                \
+  js_lexer_free(lexer);                            \
+  js_parser_free(parser);                          \
+  free(contents);                                  \
+  js_frame_free(frame);                            \
+  printf("STDOUT(%s)\n", stdoutbuff);\
   ASSERT(strcmp(stdoutbuff, expected_stdout) == 0);
 
-  return result;
-}
-
 void test_hello_world_js() {
-  JSAST *root = ex("sourcefiles/hello-world.js", "hello world\n");
+  EX(root, "sourcefiles/hello-world.js", "hello world\n", 1);
 
   ASSERT(root != 0);
-  ASSERT(root->type == JS_AST_COMPOUND);
-  ASSERT(root->children->size == 2);
-  JSAST *first = (JSAST *)root->children->items[0];
+  JSIterator iterator = js_ast_iterate(root);
+  JSAST* first = iterator.current;
   ASSERT(first != 0);
   ASSERT(first->type == JS_AST_BINOP);
   ASSERT(first->left != 0);
@@ -81,10 +80,80 @@ void test_hello_world_js() {
   ASSERT(arg1->type == JS_AST_STRING);
   ASSERT(arg1->value_str != 0);
   ASSERT(strcmp(arg1->value_str, "hello world") == 0);
+
+  js_ast_free(root);
+}
+
+void test_foreach_js() {
+  EX(root, "sourcefiles/foreach.js", "david\njohn\nsarah\nhannah\n", 1);
+  JSIterator iterator = js_ast_iterate(root);
+  JSAST* it = iterator.current;
+  ASSERT(root != 0);
+  ASSERT(it != 0);
+  ASSERT(it->type == JS_AST_DEFINITION);
+
+  js_iterator_next(&iterator);
+  it = iterator.current;
+
+  ASSERT(it != 0);
+  ASSERT(it->type == JS_AST_BINOP);
+  ASSERT(it->left != 0);
+  ASSERT(it->left->type == JS_AST_ID);
+  ASSERT(it->right != 0);
+  ASSERT(it->right->type == JS_AST_CALL);
+  ASSERT(it->right->args->size == 1);
+  ASSERT(((JSAST*)it->right->args->items[0])->type == JS_AST_FUNCTION);
+
+  js_ast_free(root);
+}
+
+void test_func_js() {
+  EX(root, "sourcefiles/func.js", "26.50\n", 1);
+  JSIterator iterator = js_ast_iterate(root);
+  JSAST* it = iterator.current;
+
+  ASSERT(it != 0);
+
+  js_ast_free(root);
+}
+
+void test_map_js() {
+  EX(root, "sourcefiles/map.js", "8.00\n", 1);
+  JSIterator iterator = js_ast_iterate(root);
+  JSAST* it = iterator.current;
+
+  ASSERT(it != 0);
+
+  js_ast_free(root);
+}
+
+void test_string_length_js() {
+  EX(root, "sourcefiles/string_length.js", "11.00\n", 1);
+  JSIterator iterator = js_ast_iterate(root);
+  JSAST* it = iterator.current;
+
+  ASSERT(it != 0);
+
+  js_ast_free(root);
+}
+
+void test_if_js() {
+  EX(root, "sourcefiles/if.js", "yes\ngood\n", 1);
+  JSIterator iterator = js_ast_iterate(root);
+  JSAST* it = iterator.current;
+
+  ASSERT(it != 0);
+
+  js_ast_free(root);
 }
 
 int main(int argc, char *argv[]) {
   test_hello_world_js();
+  test_func_js();
+  test_foreach_js();
+  test_map_js();
+  test_string_length_js();
+  test_if_js();
 
   return 0;
 }

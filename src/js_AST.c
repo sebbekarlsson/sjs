@@ -6,8 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-JSAST *js_ast_constructor(JSASTType type) {
-  JSAST *ast = NEW(JSAST);
+JSAST *js_ast_constructor(JSAST *ast, JSASTType type) {
   ast->type = type;
   ast->keyvalue = NEW_MAP();
   ast->is_result = 0;
@@ -31,13 +30,16 @@ JSAST *js_ast_constructor(JSASTType type) {
 }
 
 JSAST *init_js_ast(JSASTType type) {
-  JSAST *ast = js_ast_constructor(type);
-  ast->children = init_list(sizeof(JSAST *));
+  JSAST *ast = NEW(JSAST);
   ast->args = init_list(sizeof(JSAST *));
+  ast->children = init_list(sizeof(JSAST *));
+  ast = js_ast_constructor(ast, type);
   return ast;
 }
 
-JSAST *init_js_ast_blank(JSASTType type) { return js_ast_constructor(type); }
+JSAST *init_js_ast_blank(JSASTType type) {
+  return js_ast_constructor(NEW(JSAST), type);
+}
 
 JSAST *init_js_ast_result(JSASTType type) {
   JSAST *ast = init_js_ast(type);
@@ -236,4 +238,8 @@ list_T *js_ast_to_array(JSAST *ast) {
     return ast->children;
 
   return 0;
+}
+
+JSIterator js_ast_iterate(JSAST *ast) {
+  return js_iterator(ast->children->items, &ast->children->size);
 }
