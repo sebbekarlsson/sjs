@@ -12,7 +12,8 @@ static unsigned int should_parse_statement(JSParser *parser) {
          token->type == TOKEN_BREAK || token->type == TOKEN_ELSE ||
          token->type == TOKEN_WHILE || token->type == TOKEN_FOR ||
          token->type == TOKEN_FUNCTION || token->type == TOKEN_CONST ||
-         token->type == TOKEN_VAR || token->type == TOKEN_LET;
+         token->type == TOKEN_VAR || token->type == TOKEN_LET ||
+         token->type == TOKEN_IMPORT || token->type == TOKEN_EXPORT;
 }
 
 static unsigned int should_parse_definition(JSParser *parser) {
@@ -159,6 +160,26 @@ JSAST *js_parser_parse_object(JSParser *parser) {
     }
   }
   js_parser_eat(parser, TOKEN_RBRACE);
+
+  return ast;
+}
+
+JSAST *js_parser_parse_import(JSParser *parser) {
+  JSAST *ast = init_js_ast(JS_AST_IMPORT);
+
+  js_parser_eat(parser, TOKEN_IMPORT);
+  if (parser->token->type == TOKEN_LBRACE) {
+    ast->left = js_parser_parse_object(parser);
+  } else if (parser->token->type != TOKEN_STRING) {
+    js_parser_parse_multiple(ast->args, parser, TOKEN_COMMA);
+  }
+
+  if (parser->token->type == TOKEN_FROM) {
+    js_parser_eat(parser, TOKEN_FROM);
+  }
+
+  js_ast_set_value_str(ast, parser->token->value);
+  js_parser_eat(parser, TOKEN_STRING);
 
   return ast;
 }
@@ -490,6 +511,14 @@ JSAST *js_parser_parse_any_statement(JSParser *parser) {
   return ast;
 }
 JSAST *js_parser_parse_statement(JSParser *parser) {
+
+  if (parser->token->type == TOKEN_EXPORT) {
+    js_parser_eat(parser, TOKEN_EXPORT);
+    JSAST *statement = js_parser_parse_statement(parser);
+    statement->exported = 1;
+    return statement;
+  }
+
   switch (parser->token->type) {
   case TOKEN_IF:
   case TOKEN_ELSE:
@@ -512,6 +541,9 @@ JSAST *js_parser_parse_statement(JSParser *parser) {
     break;
   case TOKEN_VAR:
     return js_parser_parse_definition(parser);
+    break;
+  case TOKEN_IMPORT:
+    return js_parser_parse_import(parser);
     break;
   default:
     return js_parser_parse_any_statement(parser);

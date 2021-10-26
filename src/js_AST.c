@@ -48,6 +48,8 @@ JSAST *init_js_ast_result(JSASTType type) {
 }
 
 void js_ast_set_value_str(JSAST *ast, char *value_str) {
+  if (value_str == 0)
+    return;
   if (ast->value_str != 0)
     free(ast->value_str);
   ast->value_str = strdup(value_str);
@@ -242,4 +244,64 @@ list_T *js_ast_to_array(JSAST *ast) {
 
 JSIterator js_ast_iterate(JSAST *ast) {
   return js_iterator(ast->children->items, &ast->children->size);
+}
+
+list_T *js_ast_get_values(JSAST *ast) {
+  list_T *new_arr = init_list(sizeof(JSAST *));
+
+  unsigned int length = 0;
+  char **keys = 0;
+  map_get_keys(ast->keyvalue, &keys, &length);
+
+  for (size_t i = 0; i < length; i++) {
+    char *key = keys[i];
+    if (key == 0)
+      continue;
+
+    JSAST *ast_v = (JSAST *)map_get_value(ast->keyvalue, key);
+    if (ast_v == 0)
+      continue;
+
+    list_push(new_arr, ast_v);
+  }
+
+  return new_arr;
+}
+
+list_T *js_ast_get_keys(JSAST *ast) {
+  list_T *new_arr = init_list(sizeof(char *));
+
+  unsigned int length = 0;
+  char **keys = 0;
+  map_get_keys(ast->keyvalue, &keys, &length);
+
+  for (size_t i = 0; i < length; i++) {
+    char *key = keys[i];
+    if (key == 0)
+      continue;
+
+    list_push(new_arr, key);
+  }
+
+  return new_arr;
+}
+
+list_T *js_ast_get_keys_asts(JSAST *ast) {
+  list_T *new_arr = init_list(sizeof(JSAST *));
+
+  unsigned int length = 0;
+  char **keys = 0;
+  map_get_keys(ast->keyvalue, &keys, &length);
+
+  for (size_t i = 0; i < length; i++) {
+    char *key = keys[i];
+    if (key == 0)
+      continue;
+
+    JSAST *strast = init_js_ast_result(JS_AST_STRING);
+    js_ast_set_value_str(strast, key);
+    list_push(new_arr, strast);
+  }
+
+  return new_arr;
 }

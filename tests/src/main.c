@@ -1,3 +1,5 @@
+
+#include <js/js.h>
 #include <assert.h>
 #include <js/js_eval.h>
 #include <js/js_frame.h>
@@ -45,24 +47,17 @@ void printHelloWorld() {
     assert(expr);                                                              \
   }
 
-#define EX(name, filename, expected_stdout, should_eval) \
-  char *contents = get_file_contents(filename);\
-  JSLexer *lexer = init_js_lexer(contents);\
-  JSParser *parser = init_js_parser(lexer);\
-  JSAST *name = js_parser_parse(parser);\
-  map_T *frame = setup_js_frame();      \
+#define EX(name, filename, expected_stdout, should_eval)  \
+  JSExecution execution = (JSExecution){ should_eval };\
   capture_stdout();\
-  name = should_eval ? js_eval(name, frame) : name;\
+  js_execute_file(filename, &execution);\
   restore_stdout();                                \
-  js_lexer_free(lexer);                            \
-  js_parser_free(parser);                          \
-  free(contents);                                  \
-  js_frame_free(frame);                            \
   printf("STDOUT(%s)\n", stdoutbuff);\
   ASSERT(strcmp(stdoutbuff, expected_stdout) == 0);
 
 void test_hello_world_js() {
   EX(root, "sourcefiles/hello-world.js", "hello world\n", 1);
+  JSAST* root = execution.result;
 
   ASSERT(root != 0);
   JSIterator iterator = js_ast_iterate(root);
@@ -86,6 +81,7 @@ void test_hello_world_js() {
 
 void test_foreach_js() {
   EX(root, "sourcefiles/foreach.js", "david\njohn\nsarah\nhannah\n", 1);
+  JSAST* root = execution.result;
   JSIterator iterator = js_ast_iterate(root);
   JSAST* it = iterator.current;
   ASSERT(root != 0);
@@ -109,6 +105,7 @@ void test_foreach_js() {
 
 void test_func_js() {
   EX(root, "sourcefiles/func.js", "26.50\n", 1);
+  JSAST* root = execution.result;
   JSIterator iterator = js_ast_iterate(root);
   JSAST* it = iterator.current;
 
@@ -119,6 +116,7 @@ void test_func_js() {
 
 void test_map_js() {
   EX(root, "sourcefiles/map.js", "8.00\n", 1);
+  JSAST* root = execution.result;
   JSIterator iterator = js_ast_iterate(root);
   JSAST* it = iterator.current;
 
@@ -129,6 +127,7 @@ void test_map_js() {
 
 void test_string_length_js() {
   EX(root, "sourcefiles/string_length.js", "11.00\n", 1);
+  JSAST* root = execution.result;
   JSIterator iterator = js_ast_iterate(root);
   JSAST* it = iterator.current;
 
@@ -139,12 +138,19 @@ void test_string_length_js() {
 
 void test_if_js() {
   EX(root, "sourcefiles/if.js", "yes\ngood\n", 1);
+  JSAST* root = execution.result;
   JSIterator iterator = js_ast_iterate(root);
   JSAST* it = iterator.current;
 
   ASSERT(it != 0);
 
   js_ast_free(root);
+}
+
+void test_projects_calculator_index_js() {
+  EX(root, "sourcefiles/projects/calculator/index.js", "10.00\n5.00\n", 1);
+  JSAST* root = execution.result;
+  ASSERT(root != 0);
 }
 
 int main(int argc, char *argv[]) {
@@ -154,6 +160,7 @@ int main(int argc, char *argv[]) {
   test_map_js();
   test_string_length_js();
   test_if_js();
+  test_projects_calculator_index_js();
 
   return 0;
 }

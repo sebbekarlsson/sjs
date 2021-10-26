@@ -314,6 +314,16 @@ JSToken *js_lexer_parse_id(JSLexer *lexer) {
     js_lexer_advance(lexer);
   }
 
+  if (isdigit(lexer->c)) {
+    js_str_append(&s, lexer->cstr);
+    js_lexer_advance(lexer);
+  }
+
+  while (isalpha(lexer->c) || lexer->c == '_') {
+    js_str_append(&s, lexer->cstr);
+    js_lexer_advance(lexer);
+  }
+
   JSToken *tok = init_js_token(TOKEN_ID, s);
 
   if (s) {

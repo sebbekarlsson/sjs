@@ -1,7 +1,9 @@
 #include <js/builtins/array.h>
 #include <js/builtins/console/console.h>
 #include <js/builtins/object.h>
+#include <js/builtins/process.h>
 #include <js/builtins/string.h>
+#include <js/js.h>
 #include <js/js_frame.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -23,8 +25,25 @@ void js_frame_free(map_T *frame) {
   map_free(frame);
 }
 
-map_T *setup_js_frame() {
+map_T *setup_js_frame(JSExecution *execution) {
   map_T *frame = NEW_MAP();
+
+  JSAST *process = init_js_builtin_process(execution);
+  map_set(frame, "process", process);
+
+  JSAST *dirnameast = init_js_ast(JS_AST_STRING);
+  dirnameast->value_str_ptr = &execution->__dirname;
+
+  JSAST *filenameast = init_js_ast(JS_AST_STRING);
+  filenameast->value_str_ptr = &execution->__filename;
+
+  map_set(frame, "__dirname", dirnameast);
+  map_set(frame, "__filename", filenameast);
+
+  JSAST *module = init_js_ast(JS_AST_OBJECT);
+  JSAST *exports = init_js_ast(JS_AST_OBJECT);
+  map_set(module->keyvalue, "exports", exports);
+  map_set(frame, "module", module);
 
   JSAST *console = init_js_builtin_console();
   map_set(frame, "console", console);

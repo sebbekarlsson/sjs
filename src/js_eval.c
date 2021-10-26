@@ -1,7 +1,36 @@
+#include <js/js.h>
 #include <js/js_eval.h>
+#include <js/js_path.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
+char *js_dirname(map_T *stack) {
+  JSAST *stringast = (JSAST *)map_get_value(stack, "__dirname");
+  return strdup(*stringast->value_str_ptr);
+}
+
+static void export_symbol(char *name, JSAST *symbol, map_T *stack) {
+  JSAST *module = (JSAST *)map_get_value(stack, "module");
+  JSAST *exports = (JSAST *)map_get_value(module->keyvalue, "exports");
+  map_set(exports->keyvalue, name, symbol);
+}
+
+static JSExecution *get_current_execution(map_T *stack) {
+  JSAST *process = (JSAST *)map_get_value(stack, "process");
+  if (process == 0)
+    return 0;
+  JSExecution *execution = (JSExecution *)process->any_ptr;
+
+  return execution;
+}
+
+static unsigned int is_dry(map_T *stack) {
+  JSExecution *execution = get_current_execution(stack);
+  if (execution == 0)
+    return 0;
+  return execution->dry;
+}
 
 static unsigned int is_true(JSAST *ast) {
   return ((ast->is_true) || ast->value_int);
@@ -70,6 +99,9 @@ JSAST *js_eval_string_concat(JSAST *left, JSAST *right) {
 
 JSAST *js_eval(JSAST *ast, map_T *stack) {
   switch (ast->type) {
+  case JS_AST_IMPORT:
+    return js_eval_import(ast, stack);
+    break;
   case JS_AST_COMPOUND:
     return js_eval_compound(ast, stack);
     break;
@@ -204,7 +236,14 @@ JSAST *js_eval_call(JSAST *ast, map_T *stack) {
 
   return init_js_ast_result(JS_AST_UNDEFINED);
 }
-JSAST *js_eval_string(JSAST *ast, map_T *stack) { return ast; }
+JSAST *js_eval_string(JSAST *ast, map_T *stack) {
+  if (ast->value_str_ptr != 0) {
+    JSAST *newast = init_js_ast_result(JS_AST_STRING);
+    js_ast_set_value_str(newast, *ast->value_str_ptr);
+    return newast;
+  }
+  return ast;
+}
 JSAST *js_eval_number(JSAST *ast, map_T *stack) {
   if (ast == 0)
     return ast;
@@ -235,11 +274,57 @@ JSAST *js_eval_function(JSAST *ast, map_T *stack) {
       ast->args->items[i] = js_eval(ast->args->items[i], stack);
     }*/
 
-  map_set(stack, ast->value_str, ast);
+  export_symbol(ast->value_str, ast, stack);
+
+  if (is_dry(stack) == 0) {
+    map_set(stack, ast->value_str, ast);
+  }
 
   // if (ast->body != 0) {
   //  return js_eval(ast->body, stack);
   //}
+
+  return ast;
+}
+
+JSAST *js_eval_import(JSAST *ast, map_T *stack) {
+  char *filepath = strdup(ast->value_str);
+  char *__dirname = strdup(js_dirname(stack));
+
+  char *goodpath = path_resolve(filepath, __dirname);
+
+  JSExecution execution = {1, 1};
+  js_execute_file((const char *)goodpath, &execution);
+
+  JSAST *module = js_get_module(execution.frame);
+  JSAST *exports = js_get_exports(module);
+
+  list_T *symbols = js_ast_get_values(exports);
+
+  JSAST *left = ast->left ? js_eval(ast->left, stack) : 0;
+
+  list_T *keys = left ? js_ast_get_keys(left) : 0;
+
+  for (size_t i = 0; i < symbols->size; i++) {
+    JSAST *symbol = (JSAST *)symbols->items[i];
+    if (symbol->value_str == 0)
+      continue;
+
+    unsigned int should_keep =
+        keys == 0 ? 1 : list_contains_str(keys, symbol->value_str);
+
+    if (should_keep) {
+      js_eval(symbol, stack);
+    }
+  }
+
+  if (keys != 0) {
+    list_free_shallow(keys);
+  }
+
+  if (symbols != 0) {
+    list_free_shallow(symbols);
+  }
 
   return ast;
 }
@@ -532,5 +617,5 @@ JSAST *js_eval_id(JSAST *ast, map_T *stack) {
     exit(1);
   }
 
-  return value;
+  return js_eval(value, stack);
 }

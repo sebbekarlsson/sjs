@@ -23,6 +23,7 @@ JSAST *js_parser_parse_function(JSParser *parser);
 JSAST *js_parser_parse_object(JSParser *parser);
 void js_parser_parse_object_row(JSParser *parser, JSASTTuple *tuple);
 
+JSAST *js_parser_parse_import(JSParser *parser);
 JSAST *js_parser_parse_if(JSParser *parser);
 JSAST *js_parser_parse_while(JSParser *parser);
 JSAST *js_parser_parse_for(JSParser *parser);

@@ -124,7 +124,8 @@
         "JS_AST_UNOP",
         "JS_AST_WHILE",
         "JS_AST_FOR",
-        "JS_AST_PROPERTY_ACCESS"
+        "JS_AST_PROPERTY_ACCESS",
+        "JS_AST_IMPORT"
     ],
     "nrJsEvents": 507,
     "jsEvents": [
@@ -636,6 +637,13 @@
         "ValueChange",
         "notification",
         "notification"
+    ],
+    "process_builtins": [
+        {
+            "name": "cwd",
+            "ptr": "builtin_process_cwd",
+            "args": ["value"]
+        }
     ],
     "object_builtins": [
         {

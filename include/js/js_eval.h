@@ -13,6 +13,7 @@ JSAST *js_eval_string(JSAST *ast, map_T *stack);
 JSAST *js_eval_number(JSAST *ast, map_T *stack);
 JSAST *js_eval_assign(JSAST *ast, map_T *stack);
 JSAST *js_eval_function(JSAST *ast, map_T *stack);
+JSAST *js_eval_import(JSAST *ast, map_T *stack);
 JSAST *js_eval_if(JSAST *ast, map_T *stack);
 JSAST *js_eval_while(JSAST *ast, map_T *stack);
 JSAST *js_eval_for(JSAST *ast, map_T *stack);

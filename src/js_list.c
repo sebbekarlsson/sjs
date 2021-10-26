@@ -1,4 +1,5 @@
 #include <js/js_list.h>
+#include <js/js_string.h>
 #include <string.h>
 
 #define MAX(a, b) a > b ? a : b
@@ -207,10 +208,66 @@ void list_clear(list_T *list) {
   }
 }
 
+void list_free_full(list_T *list, void (*free_method)(void *item)) {
+  if (list == 0)
+    return;
+  size_t size = list->size;
+
+  for (size_t i = 0; i < size; i++) {
+    list_remove(list, list->items[i], free_method);
+  }
+
+  list_free_shallow(list);
+}
+
 void list_free_shallow(list_T *list) {
   if (!list)
     return;
 
   list_clear(list);
   free(list);
+}
+
+void *list_pop(list_T *list) {
+  if (list == 0)
+    return 0;
+  if (list->size == 0)
+    return 0;
+  if (list->items == 0)
+    return 0;
+
+  void *item = list->items[list->size - 1];
+  list_remove(list, item, 0);
+  return item;
+}
+
+char *list_join(list_T *list, const char *delim) {
+  if (list == 0)
+    return 0;
+  if (list->size == 0 || list->items == 0)
+    return 0;
+
+  char *str = 0;
+
+  for (size_t i = 0; i < list->size; i++) {
+    char *value = (char *)list->items[i];
+    if (value == 0)
+      continue;
+    js_str_append(&str, value);
+
+    if (i < list->size - 1) {
+      js_str_append(&str, delim);
+    }
+  }
+
+  return str;
+}
+
+void list_concat(list_T *list1, list_T *list2) {
+  for (size_t i = 0; i < list2->size; i++) {
+    if (list2->items[i] == 0)
+      continue;
+
+    list_push(list1, list2->items[i]);
+  }
 }

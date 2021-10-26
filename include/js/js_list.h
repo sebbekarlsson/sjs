@@ -46,8 +46,16 @@ list_T *list_merge(list_T *a, list_T *b);
 
 list_T *list_copy(list_T *a);
 
+void *list_pop(list_T *list);
+
+void list_free_full(list_T *list, void (*free_method)(void *item));
+
+char *list_join(list_T *list, const char *delim);
+
 void list_clear(list_T *list);
 
 void list_free_shallow(list_T *list);
+
+void list_concat(list_T *list1, list_T *list2);
 
 #endif

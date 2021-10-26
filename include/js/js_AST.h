@@ -23,6 +23,8 @@ typedef struct JS_AST_STRUCT {
   uint32_t *value_int_ptr;
   size_t *value_int_size_ptr;
   size_t string_length;
+  char **value_str_ptr;
+  void *any_ptr;
   char *value_str;
   list_T *children;
   list_T *args;
@@ -31,6 +33,7 @@ typedef struct JS_AST_STRUCT {
   JSFunction *fptr;
   unsigned int is_result;
   unsigned int is_true;
+  unsigned int exported;
 } JSAST;
 
 typedef struct JS_AST_TUPLE_STRUCT {
@@ -55,6 +58,10 @@ void js_ast_maybe_free(JSAST *ast);
 char *js_ast_str_value(JSAST *ast);
 
 char *js_ast_to_string(JSAST *ast);
+
+list_T *js_ast_get_values(JSAST *ast);
+list_T *js_ast_get_keys(JSAST *ast);
+list_T *js_ast_get_keys_asts(JSAST *ast);
 
 JSIterator js_ast_iterate(JSAST *ast);
 #endif

@@ -6,47 +6,22 @@
 #include <string.h>
 
 void *builtin_object_keys(void *ptr, list_T *args, map_T *stack) {
+
   JSAST *arg1 = args->items[0];
-  JSAST *new_arr = init_js_ast_result(JS_AST_ARRAY);
-
-  unsigned int length = 0;
-  char **keys = 0;
-  map_get_keys(arg1->keyvalue, &keys, &length);
-
-  for (size_t i = 0; i < length; i++) {
-    char *key = keys[i];
-    if (key == 0)
-      continue;
-
-    JSAST *ast_str = init_js_ast_result(JS_AST_STRING);
-    js_ast_set_value_str(ast_str, key);
-    list_push(new_arr->children, ast_str);
-  }
-
-  return new_arr;
+  JSAST *newarr = init_js_ast_result(JS_AST_ARRAY);
+  list_T *keys = js_ast_get_keys_asts(arg1);
+  list_concat(newarr->children, keys);
+  list_free_shallow(keys);
+  return newarr;
 }
 
 void *builtin_object_values(void *ptr, list_T *args, map_T *stack) {
   JSAST *arg1 = args->items[0];
-  JSAST *new_arr = init_js_ast_result(JS_AST_ARRAY);
-
-  unsigned int length = 0;
-  char **keys = 0;
-  map_get_keys(arg1->keyvalue, &keys, &length);
-
-  for (size_t i = 0; i < length; i++) {
-    char *key = keys[i];
-    if (key == 0)
-      continue;
-
-    JSAST *ast_v = (JSAST *)map_get_value(arg1->keyvalue, key);
-    if (ast_v == 0)
-      continue;
-
-    list_push(new_arr->children, ast_v);
-  }
-
-  return new_arr;
+  JSAST *newarr = init_js_ast_result(JS_AST_ARRAY);
+  list_T *values = js_ast_get_values(arg1);
+  list_concat(newarr->children, values);
+  list_free_shallow(values);
+  return newarr;
 }
 
 void js_builtin_object_init_prototype_functions(JSAST *prototype) { return; }
