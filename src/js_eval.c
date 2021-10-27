@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <js/js.h>
 #include <js/js_eval.h>
 #include <js/js_path.h>
@@ -5,9 +6,16 @@
 #include <stdio.h>
 #include <string.h>
 
-#define GC (execution)->gc
+#define GC execution->gc
 
-#define MARK(item) js_gc_ast(GC, item)
+#define MARK(item)                                                             \
+  {                                                                            \
+    if (GC == 0) {                                                             \
+      printf("ERROR (%s): Garbage collector is NULL.\n", __func__);            \
+      exit(1);                                                                 \
+    }                                                                          \
+    js_gc_ast(GC, item);                                                       \
+  }
 
 char *js_dirname(map_T *stack) {
   JSAST *stringast = (JSAST *)map_get_value(stack, "__dirname");
@@ -214,11 +222,12 @@ JSAST *js_call_function(JSAST *self, JSAST *ast, JSFunction *fptr,
   JSAST *result = 0;
 
   if (fptr != 0) {
-    result = (JSAST *)fptr(self, evaluated_args, stack);
-    list_free_shallow(evaluated_args);
+    result = (JSAST *)fptr(self, evaluated_args, stack, execution);
   } else if (ast && ast->body) {
     result = js_eval(ast->body, stack, execution);
   }
+
+  list_free_shallow(evaluated_args);
 
   JSAST *ret = (JSAST *)map_get_value(stack, STACK_ADDR_RETURN);
   ret = ret ? ret : result ? result : init_js_ast_result(JS_AST_UNDEFINED);
@@ -235,17 +244,19 @@ JSAST *js_eval_call(JSAST *ast, map_T *stack, JSExecution *execution) {
 
   JSAST *self = left->accessed ? left->accessed : left;
 
+  JSAST *res = 0;
+
   if (left->fptr != 0) {
-    return js_call_function(self, 0, left->fptr, ast->args, left->args, stack,
-                            execution);
+    res = js_call_function(self, 0, left->fptr, ast->args, left->args, stack,
+                           execution);
   }
 
   if (left->type == JS_AST_FUNCTION) {
-    return js_call_function(self, left, 0, ast->args, left->args, stack,
-                            execution);
+    res = js_call_function(self, left, 0, ast->args, left->args, stack,
+                           execution);
   }
 
-  JSAST *res = init_js_ast_result(JS_AST_UNDEFINED);
+  res = res ? res : init_js_ast_result(JS_AST_UNDEFINED);
   MARK(res);
   return res;
 }
@@ -302,16 +313,20 @@ JSAST *js_eval_function(JSAST *ast, map_T *stack, JSExecution *execution) {
 }
 
 JSAST *js_eval_import(JSAST *ast, map_T *stack, JSExecution *execution) {
-  char *filepath = strdup(ast->value_str);
-  char *__dirname = strdup(js_dirname(stack));
+  char *filepath = ast->value_str;
+  char *__dirname = js_dirname(stack);
 
   char *goodpath = path_resolve(filepath, __dirname);
 
   JSExecution _execution = {1, 1};
   js_execute_file((const char *)goodpath, &_execution);
+  free(goodpath);
+  free(__dirname);
 
   JSAST *module = js_get_module(_execution.frame);
+  assert(module != 0);
   JSAST *exports = js_get_exports(module);
+  assert(exports != 0);
 
   list_T *symbols = js_ast_get_values(exports);
 
@@ -324,13 +339,12 @@ JSAST *js_eval_import(JSAST *ast, map_T *stack, JSExecution *execution) {
     if (symbol->value_str == 0)
       continue;
 
-    symbol->marked = 1;
-
     unsigned int should_keep =
         keys == 0 ? 1 : list_contains_str(keys, symbol->value_str);
 
     if (should_keep) {
       JSAST *copy = js_ast_copy(symbol);
+      js_gc_ast(execution->gc, copy);
       js_eval(copy, stack, execution);
     }
   }
@@ -528,14 +542,14 @@ JSAST *js_eval_dot(JSAST *ast, map_T *stack, JSExecution *execution) {
       MARK(result);
     } else if (accessor->type == JS_AST_STRING) {
       key = accessor->value_str;
-      result = key ? (JSAST *)map_get_value(obj, key) : 0;
+      result = key ? obj ? (JSAST *)map_get_value(obj, key) : 0 : 0;
     }
   } else {
-    result = key ? (JSAST *)map_get_value(obj, key) : 0;
+    result = key ? obj ? (JSAST *)map_get_value(obj, key) : 0 : 0;
 
     if (result == 0 && left->prototype != 0) {
       obj = left->prototype->keyvalue;
-      result = key ? (JSAST *)map_get_value(obj, key) : 0;
+      result = key ? obj ? (JSAST *)map_get_value(obj, key) : 0 : 0;
 
       if (result != 0) {
         result = js_eval(result, stack, execution);
@@ -555,6 +569,7 @@ JSAST *js_eval_dot(JSAST *ast, map_T *stack, JSExecution *execution) {
 
   result = result ? result : init_js_ast_result(JS_AST_UNDEFINED);
   MARK(result);
+  return result;
 }
 
 JSAST *js_eval_property_access(JSAST *ast, map_T *stack,
@@ -594,6 +609,7 @@ JSAST *js_eval_property_access(JSAST *ast, map_T *stack,
 
   result = result ? result : init_js_ast_result(JS_AST_UNDEFINED);
   MARK(result);
+  return result;
 }
 
 JSAST *js_eval_unop_left(JSAST *ast, map_T *stack, JSExecution *execution) {

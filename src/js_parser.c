@@ -4,7 +4,14 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MARK(item) js_gc_ast(parser->execution->gc, item)
+#define MARK(item)                                                             \
+  {                                                                            \
+    if (parser->execution->gc == 0) {                                          \
+      printf("ERROR (%s): Garbage collector is NULL.\n");                      \
+      exit(1);                                                                 \
+    }                                                                          \
+    js_gc_ast(parser->execution->gc, item);                                    \
+  }
 
 static unsigned int should_parse_statement(JSParser *parser) {
   JSToken *token = parser->token;
@@ -53,6 +60,11 @@ void js_parser_eat(JSParser *parser, JSTokenType type) {
   if (parser->token->type != type) {
     printf("Parser: Unexpected token `%s`\n", parser->token->value);
     exit(1);
+  }
+
+  if (parser->token != 0) {
+    js_token_free(parser->token);
+    parser->token = 0;
   }
 
   parser->token = js_lexer_get_next_token(parser->lexer);

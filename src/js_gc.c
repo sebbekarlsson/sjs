@@ -8,7 +8,7 @@ JSGC *init_js_gc() {
 }
 
 void js_gc_free(JSGC *gc) {
-  if (gc->trash) {
+  if (gc->trash != 0) {
     js_gc_sweep(gc);
     list_free_shallow(gc->trash);
     gc->trash = 0;
@@ -17,6 +17,10 @@ void js_gc_free(JSGC *gc) {
 }
 
 void js_gc_mark(JSGC *gc, void *item, GCFreeFunc destroy) {
+  if (item == 0)
+    return;
+  if (js_gc_is_trash(gc, item))
+    return;
   JSGCItem *gcitem = NEW(JSGCItem);
   gcitem->ptr = item;
   gcitem->destroy = destroy == (void *)0 ? free : destroy;
@@ -24,8 +28,10 @@ void js_gc_mark(JSGC *gc, void *item, GCFreeFunc destroy) {
 }
 
 static void js_gc_ast_list(JSGC *gc, list_T *list) {
-  if (gc == 0)
+  if (gc == 0) {
+    printf("ERROR (js_gc_ast_list): trying to call NULL garbage collector\n");
     return;
+  }
   if (list == 0)
     return;
   if (list->size == 0)
@@ -37,22 +43,26 @@ static void js_gc_ast_list(JSGC *gc, list_T *list) {
     JSAST *child = (JSAST *)list->items[i];
     if (child == 0)
       continue;
-    if (child->marked != 0)
-      continue;
+    //  if (child->marked != 0)
+    //    continue;
     js_gc_ast(gc, child);
   }
 }
 
-void js_gc_ast(JSGC *gc, JSAST *item) {
-  if (gc == 0)
+void _js_gc_ast(JSGC *gc, JSAST *item) {
+  if (gc == 0) {
+    printf("ERROR (js_gc_ast): trying to call NULL garbage collector\n");
+    exit(1);
     return;
+  }
   if (item == 0)
     return;
-  if (item->marked != 0)
+  if (item->marked == 1)
     return;
-  js_gc_mark(gc, item, (GCFreeFunc *)js_ast_free);
   item->marked = 1;
+  js_gc_mark(gc, item, (GCFreeFunc *)js_ast_free);
   js_gc_ast(gc, item->left);
+
   js_gc_ast(gc, item->right);
   js_gc_ast(gc, item->body);
   js_gc_ast(gc, item->expr);
@@ -71,9 +81,9 @@ void js_gc_ast(JSGC *gc, JSAST *item) {
   }
 }
 
-#include <stdio.h>
 void js_gc_sweep(JSGC *gc) {
-  for (size_t i = 0; i < gc->trash->size; i++) {
+  size_t len = gc->trash->size;
+  for (size_t i = 0; i < len; i++) {
     JSGCItem *item = (JSGCItem *)gc->trash->items[i];
     if (item == 0)
       continue;
@@ -82,4 +92,17 @@ void js_gc_sweep(JSGC *gc) {
     item->destroy(item->ptr);
     free(item);
   }
+
+  list_clear(gc->trash);
+}
+
+unsigned int js_gc_is_trash(JSGC *gc, void *ptr) {
+  size_t len = gc->trash->size;
+  for (size_t i = 0; i < len; i++) {
+    JSGCItem *item = (JSGCItem *)gc->trash->items[i];
+    if (item->ptr == ptr)
+      return 1;
+  }
+
+  return 0;
 }

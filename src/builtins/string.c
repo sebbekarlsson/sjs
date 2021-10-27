@@ -1,5 +1,6 @@
 #include <js/builtins/array.h>
 #include <js/builtins/string.h>
+#include <js/js.h>
 #include <js/js_eval.h>
 #include <stdio.h>
 #include <stdlib.h>

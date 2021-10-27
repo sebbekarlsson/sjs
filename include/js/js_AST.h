@@ -7,7 +7,10 @@
 #include <js/js_token.h>
 #include <stdint.h>
 
-typedef void *(*JSFunction(void *ptr, list_T *args, map_T *stack));
+struct JS_EXECUTION_STRUCT;
+
+typedef void *(*JSFunction(void *ptr, list_T *args, map_T *stack,
+                           struct JS_EXECUTION_STRUCT *execution));
 
 typedef struct JS_AST_STRUCT {
   JSASTType type;

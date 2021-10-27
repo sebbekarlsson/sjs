@@ -64,6 +64,10 @@ char *path_resolve(char *filepath, char *dirname) {
     js_str_append(&dup, (char *)ext);
 
     if (js_file_exists(dup)) {
+      if (path_to_use != 0) {
+        free(path_to_use);
+        path_to_use = 0;
+      }
       path_to_use = dup;
       break;
     }

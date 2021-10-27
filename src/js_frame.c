@@ -13,14 +13,37 @@ const char *NAMES[8] = {"console", "Array",     "String",     "Object",
 
 const int NAMES_LENGTH = 8;
 
-void js_frame_free(map_T *frame) {
+void js_frame_free(map_T *frame, JSExecution *execution) {
   if (frame == 0)
     return;
+
+  char **keys = 0;
+  size_t length = 0;
+
+  map_get_keys(frame, &keys, &length);
+
+  for (size_t i = 0; i < length; i++) {
+    char *k = keys[i];
+    if (k == 0)
+      continue;
+    JSAST *child = (JSAST *)map_get_value(frame, k);
+    if (child == 0)
+      continue;
+
+    js_gc_ast(execution->gc, child);
+  }
+
   map_free(frame);
 }
 
 #define GC_MARK(item)                                                          \
-  { js_gc_ast(execution->gc, item); }
+  {                                                                            \
+    if (execution->gc == 0) {                                                  \
+      printf("ERROR (%s): Garbage collector is NULL.\n", __func__);            \
+      exit(1);                                                                 \
+    }                                                                          \
+    js_gc_ast(execution->gc, item);                                            \
+  }
 
 map_T *setup_js_frame(JSExecution *execution) {
   map_T *frame = NEW_MAP();
@@ -47,7 +70,7 @@ map_T *setup_js_frame(JSExecution *execution) {
   map_set(module->keyvalue, "exports", exports);
   map_set(frame, "module", module);
 
-  JSAST *console = init_js_builtin_console();
+  JSAST *console = init_js_builtin_console(execution);
   GC_MARK(console);
   map_set(frame, "console", console);
 

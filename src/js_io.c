@@ -21,8 +21,10 @@ char *get_file_contents(const char *filepath) {
   size_t len;
   ssize_t bytes_read = getdelim(&buffer, &len, '\0', fp);
   if (bytes_read != -1) {
+    fclose(fp);
     return buffer;
   } else {
+    fclose(fp);
     printf("Read %ld byes from `%s`\n", bytes_read, filepath);
     return 0;
   }

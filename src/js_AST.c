@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <js/builtins/array.h>
 #include <js/builtins/string.h>
 #include <js/js.h>
@@ -68,6 +69,8 @@ static list_T *js_copy_ast_list(list_T *list) {
 }
 
 static map_T *js_copy_ast_map(map_T *src) {
+  if (src == 0)
+    return 0;
   map_T *copy = NEW_MAP();
 
   char **keys = 0;
@@ -90,7 +93,11 @@ static map_T *js_copy_ast_map(map_T *src) {
 JSAST *js_ast_copy(JSAST *src) {
   if (src == 0)
     return 0;
-  JSAST *copy = init_js_ast(src->type);
+  JSAST *copy = init_js_ast_blank(src->type);
+  if (copy->keyvalue != 0) {
+    map_free(copy->keyvalue);
+    copy->keyvalue = 0;
+  }
 
   copy->left = js_ast_copy(src->left);
   copy->right = js_ast_copy(src->right);
@@ -114,6 +121,7 @@ JSAST *js_ast_copy(JSAST *src) {
   copy->is_true = src->is_true;
   copy->exported = src->exported;
   copy->token_type = src->token_type;
+  copy->marked = 0;
 
   return copy;
 }
@@ -164,39 +172,12 @@ static void _free_ast_list(JSAST *og, list_T *list) {
 void js_ast_free(JSAST *ast) {
   if (ast == 0)
     return;
+
+  assert(ast->marked == 1);
+
   if (ast->value_str != 0) {
     free(ast->value_str);
     ast->value_str = 0;
-  }
-
-  if (ast->body != 0) {
-    js_ast_free(ast->body);
-    ast->body = 0;
-  }
-  if (ast->left != 0) {
-    js_ast_free(ast->left);
-    ast->left = 0;
-  }
-  if (ast->right != 0) {
-    js_ast_free(ast->right);
-    ast->right = 0;
-  }
-
-  if (ast->expr != 0) {
-    js_ast_free(ast->expr);
-    ast->expr = 0;
-  }
-
-  if (ast->prototype != 0) {
-    js_ast_free(ast->prototype);
-    ast->prototype = 0;
-  }
-
-  if (ast->keyvalue != 0) {
-    list_T *values = js_ast_get_values(ast);
-    if (values != 0) {
-      _free_ast_list(ast, values);
-    }
   }
 
   if (ast->keyvalue != 0) {
@@ -204,14 +185,74 @@ void js_ast_free(JSAST *ast) {
     ast->keyvalue = 0;
   }
 
-  if (ast->args != 0) {
-    _free_ast_list(ast, ast->args);
-    ast->args = 0;
-  }
   if (ast->children != 0) {
-    _free_ast_list(ast, ast->children);
-    ast->children = 0;
+    list_free_shallow(ast->children);
   }
+
+  if (ast->args != 0) {
+    list_free_shallow(ast->args);
+  }
+
+  free(ast);
+
+  return;
+  /*
+    assert(ast->body != ast);
+
+    if (ast->left && ast->right)
+      assert(ast->left != ast->right);
+
+    if (ast->body != 0) {
+      js_ast_free(ast->body);
+      ast->body = 0;
+    }
+
+    assert(ast->left != ast);
+
+    if (ast->left != 0) {
+      js_ast_free(ast->left);
+      ast->left = 0;
+    }
+
+    assert(ast->right != ast);
+
+    if (ast->right != 0) {
+      js_ast_free(ast->right);
+      ast->right = 0;
+    }
+
+    assert(ast->expr != ast);
+
+    if (ast->expr != 0) {
+      js_ast_free(ast->expr);
+      ast->expr = 0;
+    }
+
+
+    assert(ast->prototype != ast);
+
+    if (ast->prototype != 0) {
+      js_ast_free(ast->prototype);
+      ast->prototype = 0;
+    }
+
+    if (ast->keyvalue != 0) {
+      list_T *values = js_ast_get_values(ast);
+      if (values != 0) {
+        _free_ast_list(ast, values);
+      }
+    }
+
+
+
+    if (ast->args != 0) {
+      _free_ast_list(ast, ast->args);
+      ast->args = 0;
+    }
+    if (ast->children != 0) {
+      _free_ast_list(ast, ast->children);
+      ast->children = 0;
+    }*/
 }
 
 char *js_ast_array_to_string(JSAST *ast) {
@@ -241,7 +282,8 @@ char *js_ast_object_to_string(JSAST *ast) {
   char **keys = 0;
   unsigned int length = 0;
 
-  map_get_keys(ast->keyvalue, &keys, &length);
+  if (ast->keyvalue != 0)
+    map_get_keys(ast->keyvalue, &keys, &length);
 
   js_str_append(&str, "{");
 
@@ -354,7 +396,9 @@ list_T *js_ast_get_values(JSAST *ast) {
 
   unsigned int length = 0;
   char **keys = 0;
-  map_get_keys(ast->keyvalue, &keys, &length);
+
+  if (ast->keyvalue != 0)
+    map_get_keys(ast->keyvalue, &keys, &length);
 
   for (size_t i = 0; i < length; i++) {
     char *key = keys[i];
@@ -376,7 +420,9 @@ list_T *js_ast_get_keys(JSAST *ast) {
 
   unsigned int length = 0;
   char **keys = 0;
-  map_get_keys(ast->keyvalue, &keys, &length);
+
+  if (ast->keyvalue != 0)
+    map_get_keys(ast->keyvalue, &keys, &length);
 
   for (size_t i = 0; i < length; i++) {
     char *key = keys[i];
@@ -394,7 +440,9 @@ list_T *js_ast_get_keys_asts(JSAST *ast) {
 
   unsigned int length = 0;
   char **keys = 0;
-  map_get_keys(ast->keyvalue, &keys, &length);
+
+  if (ast->keyvalue != 0)
+    map_get_keys(ast->keyvalue, &keys, &length);
 
   for (size_t i = 0; i < length; i++) {
     char *key = keys[i];

@@ -4,5 +4,5 @@
 
 struct JS_EXECUTION_STRUCT;
 map_T *setup_js_frame(struct JS_EXECUTION_STRUCT *execution);
-void js_frame_free(map_T *frame);
+void js_frame_free(map_T *frame, struct JS_EXECUTION_STRUCT *execution);
 #endif
