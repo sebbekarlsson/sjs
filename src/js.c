@@ -7,10 +7,16 @@
 
 void js_execute_file(const char *filepath, JSExecution *execution) {
   char *contents = get_file_contents(filepath);
+  if (contents == 0)
+    return;
   JSExecution ex = *execution;
   ex.cwd = get_working_directory();
   ex.__filename = strdup(filepath);
   ex.__dirname = path_dirname(filepath);
+
+  if (ex.gc == 0) {
+    ex.gc = init_js_gc();
+  }
 
   *execution = ex;
   return js_execute_str(contents, execution);
@@ -18,10 +24,12 @@ void js_execute_file(const char *filepath, JSExecution *execution) {
 void js_execute_str(char *str, JSExecution *execution) {
   JSExecution ex = *execution;
   JSLexer *lexer = init_js_lexer(str);
-  JSParser *parser = init_js_parser(lexer);
+  JSParser *parser = init_js_parser(lexer, execution);
   JSAST *root = js_parser_parse(parser);
+  js_gc_ast(execution->gc, root);
   map_T *frame = setup_js_frame(execution);
-  JSAST *result = ex.should_execute ? js_eval(root, frame) : 0;
+  JSAST *result = ex.should_execute ? js_eval(root, frame, execution) : 0;
+  js_gc_ast(execution->gc, result);
 
   ex.lexer = lexer;
   ex.parser = parser;
@@ -50,20 +58,29 @@ void js_execution_free(JSExecution *execution) {
   }
 
   if (execution->result != 0) {
-    js_ast_free(execution->result);
-    execution->result = 0;
+    if (execution->result->marked == 0) {
+      js_ast_free(execution->result);
+      execution->result = 0;
+    }
   }
-
-  // TODO: implement js_ast_copy and have js_eval always return a copy.
-  // Need to do this for this to work.
-  // if (execution->root != 0) {
-  //   js_ast_free(execution->root);
-  //   execution->root = 0;
-  // }
 
   if (execution->contents != 0) {
     free(execution->contents);
     execution->contents = 0;
+  }
+
+  if (execution->gc != 0) {
+    js_gc_free(execution->gc);
+  }
+
+  if (execution->__dirname != 0) {
+    free(execution->__dirname);
+    execution->__dirname = 0;
+  }
+
+  if (execution->__filename != 0) {
+    free(execution->__filename);
+    execution->__filename = 0;
   }
 }
 

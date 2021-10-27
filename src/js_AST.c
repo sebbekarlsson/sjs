@@ -1,9 +1,12 @@
 #include <js/builtins/array.h>
 #include <js/builtins/string.h>
+#include <js/js.h>
 #include <js/js_AST.h>
+#include <js/js_gc.h>
 #include <js/js_string.h>
 #include <js/macros.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 JSAST *js_ast_constructor(JSAST *ast, JSASTType type) {
@@ -14,6 +17,7 @@ JSAST *js_ast_constructor(JSAST *ast, JSASTType type) {
   ast->fptr = 0;
   ast->value_int_ptr = 0;
   ast->value_int_size_ptr = 0;
+  ast->marked = 0;
   switch (type) {
   case JS_AST_ARRAY: {
     ast->prototype = init_js_builtin_array_prototype(ast);
@@ -47,13 +51,15 @@ JSAST *init_js_ast_result(JSASTType type) {
   return ast;
 }
 
-static list_T* js_copy_ast_list(list_T* list) {
-  if (list == 0) return 0;
-  list_T* newlist = init_list(list->item_size);
+static list_T *js_copy_ast_list(list_T *list) {
+  if (list == 0)
+    return 0;
+  list_T *newlist = init_list(list->item_size);
 
   for (size_t i = 0; i < list->size; i++) {
-    JSAST* child = (JSAST*)list->items[i];
-    if (child == 0) continue;
+    JSAST *child = (JSAST *)list->items[i];
+    if (child == 0)
+      continue;
 
     list_push(newlist, js_ast_copy(child));
   }
@@ -61,27 +67,30 @@ static list_T* js_copy_ast_list(list_T* list) {
   return newlist;
 }
 
-static map_T* js_copy_ast_map(map_T* src) {
-  map_T* copy = NEW_MAP();
+static map_T *js_copy_ast_map(map_T *src) {
+  map_T *copy = NEW_MAP();
 
-  char** keys = 0;
+  char **keys = 0;
   size_t length = 0;
   map_get_keys(src, &keys, &length);
 
   for (size_t i = 0; i < length; i++) {
-    char* key = keys[i];
-    if (key == 0) continue;
-    JSAST* item = (JSAST*)map_get_value(src, key);
-    if (item == 0) continue;
+    char *key = keys[i];
+    if (key == 0)
+      continue;
+    JSAST *item = (JSAST *)map_get_value(src, key);
+    if (item == 0)
+      continue;
     map_set(copy, key, item);
   }
 
   return copy;
 }
 
-JSAST* js_ast_copy(JSAST* src) {
-  if (src == 0) return 0;
-  JSAST* copy = init_js_ast(src->type);
+JSAST *js_ast_copy(JSAST *src) {
+  if (src == 0)
+    return 0;
+  JSAST *copy = init_js_ast(src->type);
 
   copy->left = js_ast_copy(src->left);
   copy->right = js_ast_copy(src->right);
@@ -132,15 +141,21 @@ char *js_ast_str_value(JSAST *ast) {
   return strdup(buff);
 }
 
-static void _free_ast_list(list_T *list) {
+static void _free_ast_list(JSAST *og, list_T *list) {
   if (list == 0)
     return;
   if (list->items != 0) {
     for (uint32_t i = 0; i < list->size; i++) {
       JSAST *ast = (JSAST *)list->items[i];
+      if (ast == 0)
+        continue;
+      if (ast == og)
+        continue;
       js_ast_free(ast);
     }
-    free(list->items);
+
+    if (list->items != 0)
+      free(list->items);
   }
 
   free(list);
@@ -177,10 +192,26 @@ void js_ast_free(JSAST *ast) {
     ast->prototype = 0;
   }
 
-  map_free(ast->keyvalue);
+  if (ast->keyvalue != 0) {
+    list_T *values = js_ast_get_values(ast);
+    if (values != 0) {
+      _free_ast_list(ast, values);
+    }
+  }
 
-  _free_ast_list(ast->args);
-  _free_ast_list(ast->children);
+  if (ast->keyvalue != 0) {
+    map_free(ast->keyvalue);
+    ast->keyvalue = 0;
+  }
+
+  if (ast->args != 0) {
+    _free_ast_list(ast, ast->args);
+    ast->args = 0;
+  }
+  if (ast->children != 0) {
+    _free_ast_list(ast, ast->children);
+    ast->children = 0;
+  }
 }
 
 char *js_ast_array_to_string(JSAST *ast) {

@@ -1,4 +1,5 @@
 #include <js/builtins/object.h>
+#include <js/js.h>
 #include <js/js_eval.h>
 #include <stdint.h>
 #include <stdio.h>

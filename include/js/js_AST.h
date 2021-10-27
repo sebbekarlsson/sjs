@@ -34,6 +34,7 @@ typedef struct JS_AST_STRUCT {
   unsigned int is_result;
   unsigned int is_true;
   unsigned int exported;
+  unsigned int marked;
 } JSAST;
 
 typedef struct JS_AST_TUPLE_STRUCT {
@@ -43,7 +44,7 @@ typedef struct JS_AST_TUPLE_STRUCT {
 
 JSAST *init_js_ast(JSASTType type);
 
-JSAST* js_ast_copy(JSAST* src);
+JSAST *js_ast_copy(JSAST *src);
 
 JSAST *init_js_ast_blank(JSASTType type);
 

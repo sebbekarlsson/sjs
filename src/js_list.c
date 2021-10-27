@@ -213,8 +213,17 @@ void list_free_full(list_T *list, void (*free_method)(void *item)) {
     return;
   size_t size = list->size;
 
+  if (size == 0)
+    return;
+
   for (size_t i = 0; i < size; i++) {
-    list_remove(list, list->items[i], free_method);
+    void *item = list->items[i];
+    if (item == 0)
+      continue;
+
+    if (free_method) {
+      free_method(item);
+    }
   }
 
   list_free_shallow(list);

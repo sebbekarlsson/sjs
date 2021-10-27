@@ -2,12 +2,14 @@
 #define JS_ENGINE_H
 #include <js/js_eval.h>
 #include <js/js_frame.h>
+#include <js/js_gc.h>
 #include <js/js_lexer.h>
 #include <js/js_parser.h>
 
 typedef struct JS_EXECUTION_STRUCT {
   unsigned int should_execute;
   unsigned int dry;
+  JSGC *gc;
   char *cwd;
   JSLexer *lexer;
   JSParser *parser;

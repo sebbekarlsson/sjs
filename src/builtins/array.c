@@ -1,10 +1,12 @@
 #include <js/builtins/array.h>
+#include <js/js.h>
 #include <js/js_eval.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-void *builtin_array_map(void *ptr, list_T *args, map_T *stack) {
+void *builtin_array_map(void *ptr, list_T *args, map_T *stack,
+                        JSExecution *execution) {
   JSAST *arr = ptr;
 
   JSAST *arg1 = args->items[0];
@@ -20,11 +22,11 @@ void *builtin_array_map(void *ptr, list_T *args, map_T *stack) {
   for (uint32_t i = 0; i < children->size; i++) {
     list_clear(call_args);
     JSAST *child = (JSAST *)children->items[i];
-    JSAST *evaluated = js_eval(child, stack);
+    JSAST *evaluated = js_eval(child, stack, execution);
     list_push(call_args, evaluated);
 
-    JSAST *result =
-        js_call_function(arg1, arg1, 0, call_args, arg1->args, stack);
+    JSAST *result = js_call_function(arg1, arg1, 0, call_args, arg1->args,
+                                     stack, execution);
 
     if (result) {
       list_push(new_arr->children, result);
@@ -36,7 +38,8 @@ void *builtin_array_map(void *ptr, list_T *args, map_T *stack) {
   return new_arr;
 }
 
-void *builtin_array_foreach(void *ptr, list_T *args, map_T *stack) {
+void *builtin_array_foreach(void *ptr, list_T *args, map_T *stack,
+                            JSExecution *execution) {
   JSAST *arr = ptr;
 
   JSAST *arg1 = args->items[0];
@@ -51,11 +54,11 @@ void *builtin_array_foreach(void *ptr, list_T *args, map_T *stack) {
   for (uint32_t i = 0; i < children->size; i++) {
     list_clear(call_args);
     JSAST *child = (JSAST *)children->items[i];
-    JSAST *evaluated = js_eval(child, stack);
+    JSAST *evaluated = js_eval(child, stack, execution);
     list_push(call_args, evaluated);
 
-    JSAST *result =
-        js_call_function(arg1, arg1, 0, call_args, arg1->args, stack);
+    JSAST *result = js_call_function(arg1, arg1, 0, call_args, arg1->args,
+                                     stack, execution);
   }
 
   return init_js_ast_result(JS_AST_UNDEFINED);
@@ -64,7 +67,8 @@ void *builtin_array_foreach(void *ptr, list_T *args, map_T *stack) {
 // functions
 #include <array.gpp.h>
 
-void *builtin_array_from(void *ptr, list_T *args, map_T *stack) {
+void *builtin_array_from(void *ptr, list_T *args, map_T *stack,
+                         JSExecution *execution) {
   JSAST *arg1 = args->items[0];
 
   JSAST *newarr = init_js_ast_blank(JS_AST_ARRAY);

@@ -1,7 +1,10 @@
+#include <js/js.h>
 #include <js/js_parser.h>
 #include <js/macros.h>
 #include <stdio.h>
 #include <string.h>
+
+#define MARK(item) js_gc_ast(parser->execution->gc, item)
 
 static unsigned int should_parse_statement(JSParser *parser) {
   JSToken *token = parser->token;
@@ -26,10 +29,11 @@ static unsigned int should_parse_definition(JSParser *parser) {
          token->type == TOKEN_LET;
 }
 
-JSParser *init_js_parser(JSLexer *lexer) {
+JSParser *init_js_parser(JSLexer *lexer, JSExecution *execution) {
   JSParser *parser = NEW(JSParser);
   parser->lexer = lexer;
   parser->token = js_lexer_get_next_token(parser->lexer);
+  parser->execution = execution;
 
   return parser;
 }
@@ -56,6 +60,7 @@ void js_parser_eat(JSParser *parser, JSTokenType type) {
 
 JSAST *js_parser_parse_num(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_NUMBER);
+  MARK(ast);
   ast->value_num = atof(parser->token->value);
   ast->value_int = (int)ast->value_num;
   if (parser->token->type == TOKEN_INT) {
@@ -68,12 +73,14 @@ JSAST *js_parser_parse_num(JSParser *parser) {
 JSAST *js_parser_parse_str(JSParser *parser) {
 
   JSAST *ast = init_js_ast(JS_AST_STRING);
+  MARK(ast);
   js_ast_set_value_str(ast, parser->token->value);
   js_parser_eat(parser, TOKEN_STRING);
   return ast;
 }
 JSAST *js_parser_parse_id(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_ID);
+  MARK(ast);
   ast->value_str = strdup(parser->token->value);
 
   if (parser->token->type == TOKEN_ID) {
@@ -88,6 +95,7 @@ JSAST *js_parser_parse_id(JSParser *parser) {
 }
 JSAST *js_parser_parse_array(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_ARRAY);
+  MARK(ast);
   js_parser_eat(parser, TOKEN_LBRACKET);
 
   if (parser->token->type != TOKEN_RBRACKET) {
@@ -101,6 +109,7 @@ JSAST *js_parser_parse_array(JSParser *parser) {
 
 JSAST *js_parser_parse_function(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_FUNCTION);
+  MARK(ast);
   js_parser_eat(parser, TOKEN_FUNCTION);
   if (parser->token->type == TOKEN_ID) {
     ast->value_str = strdup(parser->token->value);
@@ -125,6 +134,7 @@ JSAST *js_parser_parse_function(JSParser *parser) {
 void js_parser_parse_object_row(JSParser *parser, JSASTTuple *tuple) {
   JSASTTuple tup = *tuple;
   JSAST *keyast = js_parser_parse_factor(parser);
+  MARK(keyast);
   JSAST *valueast = 0;
   if (parser->token->type == TOKEN_COLON) {
     js_parser_eat(parser, TOKEN_COLON);
@@ -139,6 +149,7 @@ void js_parser_parse_object_row(JSParser *parser, JSASTTuple *tuple) {
 
 JSAST *js_parser_parse_object(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_OBJECT);
+  MARK(ast);
   js_parser_eat(parser, TOKEN_LBRACE);
   if (parser->token->type != TOKEN_RBRACE) {
     JSASTTuple tuple = (JSASTTuple){0, 0};
@@ -166,6 +177,7 @@ JSAST *js_parser_parse_object(JSParser *parser) {
 
 JSAST *js_parser_parse_import(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_IMPORT);
+  MARK(ast);
 
   js_parser_eat(parser, TOKEN_IMPORT);
   if (parser->token->type == TOKEN_LBRACE) {
@@ -187,6 +199,7 @@ JSAST *js_parser_parse_import(JSParser *parser) {
 JSAST *js_parser_parse_if(JSParser *parser) {
 
   JSAST *ast = init_js_ast(JS_AST_IF);
+  MARK(ast);
 
   if (parser->token->type == TOKEN_ELSE) {
     ast->type = JS_AST_ELSE;
@@ -224,6 +237,7 @@ JSAST *js_parser_parse_if(JSParser *parser) {
 }
 JSAST *js_parser_parse_while(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_WHILE);
+  MARK(ast);
   js_parser_eat(parser, TOKEN_WHILE);
   js_parser_eat(parser, TOKEN_LPAREN);
   if (parser->token->type != TOKEN_RPAREN) {
@@ -246,6 +260,7 @@ JSAST *js_parser_parse_while(JSParser *parser) {
 }
 JSAST *js_parser_parse_for(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_FOR);
+  MARK(ast);
   js_parser_eat(parser, TOKEN_FOR);
   js_parser_eat(parser, TOKEN_LPAREN);
   if (parser->token->type != TOKEN_RPAREN) {
@@ -288,6 +303,7 @@ JSAST *js_parser_parse_factor(JSParser *parser) {
 
     if (parser->token->type != TOKEN_ARROW_RIGHT && args->size == 1) {
       ast = (JSAST *)args->items[0];
+      MARK(ast);
       list_free_shallow(args);
     }
 
@@ -296,6 +312,7 @@ JSAST *js_parser_parse_factor(JSParser *parser) {
                 parser->token->type == TOKEN_MINUS ||
                 parser->token->type == TOKEN_PLUS)) {
       JSAST *binop = init_js_ast(JS_AST_BINOP);
+      MARK(binop);
       binop->left = ast;
       binop->token_type = parser->token->type;
       js_parser_eat(parser, parser->token->type);
@@ -306,6 +323,7 @@ JSAST *js_parser_parse_factor(JSParser *parser) {
     if (parser->token->type == TOKEN_ARROW_RIGHT) {
       js_parser_eat(parser, TOKEN_ARROW_RIGHT);
       ast = init_js_ast(JS_AST_FUNCTION);
+      MARK(ast);
       list_free_shallow(ast->args);
       ast->args = args;
       if (parser->token->type == TOKEN_LBRACE) {
@@ -348,10 +366,12 @@ JSAST *js_parser_parse_factor(JSParser *parser) {
 
 JSAST *js_parser_parse_term(JSParser *parser) {
   JSAST *left = js_parser_parse_factor(parser);
+  MARK(left);
 
   while (left && (parser->token->type == TOKEN_MINUS_EQUALS ||
                   parser->token->type == TOKEN_PLUS_EQUALS)) {
     JSAST *assign = init_js_ast(JS_AST_ASSIGNMENT);
+    MARK(assign);
     assign->left = left;
     assign->token_type = parser->token->type;
     js_parser_eat(parser, parser->token->type);
@@ -362,12 +382,15 @@ JSAST *js_parser_parse_term(JSParser *parser) {
   while (left && (parser->token->type == TOKEN_STAR ||
                   parser->token->type == TOKEN_DIV)) {
     JSAST *binop = init_js_ast(JS_AST_BINOP);
+    MARK(binop);
     binop->left = left;
     binop->token_type = parser->token->type;
     js_parser_eat(parser, parser->token->type);
     binop->right = js_parser_parse_expr(parser);
     left = binop;
   }
+
+  MARK(left);
 
   return left;
 }
@@ -376,6 +399,7 @@ JSAST *js_parser_parse_expr(JSParser *parser) {
 
   while (left && (parser->token->type == TOKEN_DOT)) {
     JSAST *binop = init_js_ast(JS_AST_BINOP);
+    MARK(binop);
     binop->left = left;
     binop->token_type = parser->token->type;
     js_parser_eat(parser, parser->token->type);
@@ -386,6 +410,7 @@ JSAST *js_parser_parse_expr(JSParser *parser) {
   while (left && (parser->token->type == TOKEN_PLUS ||
                   parser->token->type == TOKEN_MINUS)) {
     JSAST *binop = init_js_ast(JS_AST_BINOP);
+    MARK(binop);
     binop->left = left;
     binop->token_type = parser->token->type;
     js_parser_eat(parser, parser->token->type);
@@ -395,6 +420,7 @@ JSAST *js_parser_parse_expr(JSParser *parser) {
 
   while (left && (parser->token->type == TOKEN_LPAREN)) {
     JSAST *call = init_js_ast(JS_AST_CALL);
+    MARK(call);
     js_ast_set_value_str(call, left->value_str);
     call->left = left;
     js_parser_eat(parser, TOKEN_LPAREN);
@@ -413,6 +439,7 @@ JSAST *js_parser_parse_expr(JSParser *parser) {
   // array access
   while (left && (parser->token->type == TOKEN_LBRACKET)) {
     JSAST *access = init_js_ast(JS_AST_PROPERTY_ACCESS);
+    MARK(access);
     js_ast_set_value_str(access, left->value_str);
     access->left = left;
     js_parser_eat(parser, TOKEN_LBRACKET);
@@ -430,6 +457,7 @@ JSAST *js_parser_parse_expr(JSParser *parser) {
 
   while (left && (parser->token->type == TOKEN_EQUALS)) {
     JSAST *assign = init_js_ast(JS_AST_ASSIGNMENT);
+    MARK(assign);
     js_ast_set_value_str(assign, left->value_str);
     assign->left = left;
     assign->token_type = TOKEN_EQUALS;
@@ -445,6 +473,7 @@ JSAST *js_parser_parse_expr(JSParser *parser) {
           parser->token->type == TOKEN_NOT_EQUALS ||
           parser->token->type == TOKEN_NOT_EQUALS_EQUALS)) {
     JSAST *binop = init_js_ast(JS_AST_BINOP);
+    MARK(binop);
     binop->left = left;
     binop->token_type = parser->token->type;
     js_parser_eat(parser, parser->token->type);
@@ -454,6 +483,7 @@ JSAST *js_parser_parse_expr(JSParser *parser) {
 
   while (left && (parser->token->type == TOKEN_AND_AND)) {
     JSAST *binop = init_js_ast(JS_AST_BINOP);
+    MARK(binop);
     binop->left = left;
     binop->token_type = parser->token->type;
     js_parser_eat(parser, parser->token->type);
@@ -464,11 +494,14 @@ JSAST *js_parser_parse_expr(JSParser *parser) {
   while (left && (parser->token->type == TOKEN_INCREMENT ||
                   parser->token->type == TOKEN_DECREMENT)) {
     JSAST *unop = init_js_ast(JS_AST_UNOP);
+    MARK(unop);
     unop->token_type = parser->token->type;
     js_parser_eat(parser, parser->token->type);
     unop->left = left;
     left = unop;
   }
+
+  MARK(left);
 
   return left;
 }
@@ -485,11 +518,13 @@ JSAST *js_parser_parse_definition(JSParser *parser) {
 
   JSAST *ast = js_parser_parse_assignment(parser);
   ast->type = JS_AST_DEFINITION;
+  MARK(ast);
   return ast;
 }
 
 JSAST *js_parser_parse_assignment(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_ASSIGNMENT);
+  MARK(ast);
   ast->left = js_parser_parse_id(parser);
 
   if (parser->token->type == TOKEN_EQUALS) {
@@ -501,6 +536,7 @@ JSAST *js_parser_parse_assignment(JSParser *parser) {
 
 JSAST *js_parser_parse_any_statement(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_STATEMENT);
+  MARK(ast);
   ast->value_str = strdup(parser->token->value);
 
   if (parser->token->type == TOKEN_RETURN)
@@ -516,6 +552,7 @@ JSAST *js_parser_parse_statement(JSParser *parser) {
     js_parser_eat(parser, TOKEN_EXPORT);
     JSAST *statement = js_parser_parse_statement(parser);
     statement->exported = 1;
+    MARK(statement);
     return statement;
   }
 
@@ -571,11 +608,14 @@ JSAST *js_parser_parse_compound(JSParser *parser) {
     }
   }
 
+  MARK(ast);
+
   return ast;
 }
 
 JSAST *js_parser_parse_body(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_COMPOUND);
+  MARK(ast);
   if (parser->token->type == TOKEN_RBRACE)
     return ast;
 
@@ -608,6 +648,7 @@ JSAST *js_parser_parse(JSParser *parser) {
 void js_parser_parse_multiple(JSParser *parser, list_T *list,
                               JSTokenType delim) {
   JSAST *child = js_parser_parse_expr(parser);
+  MARK(child);
 
   if (child != 0)
     list_push(list, child);
@@ -616,6 +657,7 @@ void js_parser_parse_multiple(JSParser *parser, list_T *list,
          parser->token->type != TOKEN_RPAREN) {
     js_parser_eat(parser, delim);
     child = js_parser_parse_expr(parser);
+    MARK(child);
 
     if (child != 0)
       list_push(list, child);

@@ -6,9 +6,10 @@
 typedef struct JS_PARSER_STRUCT {
   JSLexer *lexer;
   JSToken *token;
+  struct JS_EXECUTION_STRUCT *execution;
 } JSParser;
 
-JSParser *init_js_parser(JSLexer *lexer);
+JSParser *init_js_parser(JSLexer *lexer, struct JS_EXECUTION_STRUCT *execution);
 
 void js_parser_free(JSParser *parser);
 

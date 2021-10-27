@@ -8,54 +8,59 @@
 #include <stdint.h>
 #include <stdio.h>
 
-const char *NAMES[8] = {"console", "Array", "String", "Object", "process", "__dirname", "__filename", "module"};
+const char *NAMES[8] = {"console", "Array",     "String",     "Object",
+                        "process", "__dirname", "__filename", "module"};
 
 const int NAMES_LENGTH = 8;
 
 void js_frame_free(map_T *frame) {
   if (frame == 0)
     return;
-  for (int i = 0; i < NAMES_LENGTH; i++) {
-    const char *name = NAMES[i];
-    JSAST *item = (JSAST *)map_get_value(frame, name);
-    map_unset(frame, name);
-    if (item != 0)
-      js_ast_free(item);
-  }
-
   map_free(frame);
 }
+
+#define GC_MARK(item)                                                          \
+  { js_gc_ast(execution->gc, item); }
 
 map_T *setup_js_frame(JSExecution *execution) {
   map_T *frame = NEW_MAP();
 
   JSAST *process = init_js_builtin_process(execution);
+  GC_MARK(process);
   map_set(frame, "process", process);
 
   JSAST *dirnameast = init_js_ast(JS_AST_STRING);
+  GC_MARK(dirnameast);
   dirnameast->value_str_ptr = &execution->__dirname;
 
   JSAST *filenameast = init_js_ast(JS_AST_STRING);
+  GC_MARK(filenameast);
   filenameast->value_str_ptr = &execution->__filename;
 
   map_set(frame, "__dirname", dirnameast);
   map_set(frame, "__filename", filenameast);
 
   JSAST *module = init_js_ast(JS_AST_OBJECT);
+  GC_MARK(module);
   JSAST *exports = init_js_ast(JS_AST_OBJECT);
+  GC_MARK(exports);
   map_set(module->keyvalue, "exports", exports);
   map_set(frame, "module", module);
 
   JSAST *console = init_js_builtin_console();
+  GC_MARK(console);
   map_set(frame, "console", console);
 
   JSAST *arr = init_js_builtin_array();
+  GC_MARK(arr);
   map_set(frame, "Array", arr);
 
   JSAST *str = init_js_builtin_string();
+  GC_MARK(str);
   map_set(frame, "String", str);
 
   JSAST *obj = init_js_builtin_object();
+  GC_MARK(obj);
   map_set(frame, "Object", obj);
 
   // TODO: implement Boolean
