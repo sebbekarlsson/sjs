@@ -249,9 +249,7 @@ JSAST *js_eval_call(JSAST *ast, map_T *stack, JSExecution *execution) {
   if (left->fptr != 0) {
     res = js_call_function(self, 0, left->fptr, ast->args, left->args, stack,
                            execution);
-  }
-
-  if (left->type == JS_AST_FUNCTION) {
+  } else if (left->type == JS_AST_FUNCTION) {
     res = js_call_function(self, left, 0, ast->args, left->args, stack,
                            execution);
   }

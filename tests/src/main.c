@@ -48,7 +48,7 @@ void printHelloWorld() {
   }
 
 #define EX(name, filename, expected_stdout, should_eval)  \
-  JSExecution execution = (JSExecution){ should_eval };\
+  JSExecution execution = {1};                              \
   capture_stdout();\
   js_execute_file(filename, &execution);\
   restore_stdout();                                \
@@ -115,12 +115,30 @@ void test_func_js() {
 }
 
 void test_map_js() {
-  EX(root, "sourcefiles/map.js", "8.00\n", 1);
+  EX(root, "sourcefiles/map.js", "", 1);
   JSAST* root = execution.result;
   JSIterator iterator = js_ast_iterate(root);
   JSAST* it = iterator.current;
-
   ASSERT(it != 0);
+  ASSERT(it->type == JS_AST_DEFINITION);
+  it = (JSAST*)js_iterator_next(&iterator);
+  ASSERT(it != 0);
+  ASSERT(it->type == JS_AST_DEFINITION);
+  ASSERT(it->right != 0);
+  ASSERT(it->right->type == JS_AST_BINOP);
+  ASSERT(it->right->right != 0);
+  ASSERT(it->right->right->type == JS_AST_CALL);
+  JSAST* result = js_eval(it->right, execution.frame, &execution);
+  ASSERT(result != 0);
+  ASSERT(result->type == JS_AST_ARRAY);
+  ASSERT(result->children->size == 8);
+
+  for (size_t i = 0; i < result->children->size; i++) {
+    JSAST* child = (JSAST*)result->children->items[i];
+    ASSERT(child != 0);
+    ASSERT(child->type == JS_AST_STRING);
+  }
+
 
   js_ast_free(root);
 }
