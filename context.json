@@ -645,6 +645,13 @@
             "args": ["value"]
         }
     ],
+    "math_builtins": [
+        {
+            "name": "cos",
+            "ptr": "builtin_math_cos",
+            "args": ["value"]
+        }
+    ],
     "object_builtins": [
         {
             "name": "keys",

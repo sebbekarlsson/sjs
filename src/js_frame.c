@@ -1,5 +1,6 @@
 #include <js/builtins/array.h>
 #include <js/builtins/console/console.h>
+#include <js/builtins/math.h>
 #include <js/builtins/object.h>
 #include <js/builtins/process.h>
 #include <js/builtins/string.h>
@@ -86,9 +87,12 @@ map_T *setup_js_frame(JSExecution *execution) {
   GC_MARK(obj);
   map_set(frame, "Object", obj);
 
+  JSAST *math = init_js_builtin_math(execution);
+  GC_MARK(math);
+  map_set(frame, "Math", math);
+
   // TODO: implement Boolean
   // TODO: implement Boolean
-  // TODO: implement Math
   // TODO: implement Function
   // TODO: implement Symbol
   // TODO: implement Number

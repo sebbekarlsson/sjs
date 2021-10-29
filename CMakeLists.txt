@@ -69,6 +69,6 @@ FetchContent_MakeAvailable(hashmap_static)
 
 generate_files()
 
-target_link_libraries(xjs PUBLIC hashmap_static)
-target_link_libraries(xjs_e PUBLIC hashmap_static)
-target_link_libraries(xjs_static PUBLIC hashmap_static)
+target_link_libraries(xjs PUBLIC hashmap_static m)
+target_link_libraries(xjs_e PUBLIC hashmap_static m)
+target_link_libraries(xjs_static PUBLIC hashmap_static m)

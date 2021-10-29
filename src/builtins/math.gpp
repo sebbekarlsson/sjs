@@ -1,0 +1,21 @@
+void js_builtin_math_init_static_functions(JSAST *obj) {
+  {{
+      map(math_builtins, (@
+      {
+          JSAST *func = init_js_ast(JS_AST_FUNCTION);
+
+          {{
+            map($0.args, (@
+              JSAST *id = init_js_ast(JS_AST_ID);
+              js_ast_set_value_str(id, "{{ $0 }}");
+              list_push(func->args, id);
+            @))
+          }}
+
+          func->fptr = (JSFunction*){{ $0.ptr }};
+          js_ast_set_value_str(func, "{{$0.name}}");
+          map_set(obj->keyvalue, "{{ $0.name }}", func);
+      }
+      @))
+  }}
+}
