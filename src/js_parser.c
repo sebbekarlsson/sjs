@@ -415,7 +415,7 @@ JSAST *js_parser_parse_expr(JSParser *parser) {
     binop->left = left;
     binop->token_type = parser->token->type;
     js_parser_eat(parser, parser->token->type);
-    binop->right = js_parser_parse_expr(parser);
+    binop->right = js_parser_parse_term(parser);
     left = binop;
   }
 

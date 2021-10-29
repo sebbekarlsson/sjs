@@ -63,14 +63,9 @@ void test_hello_world_js() {
   JSIterator iterator = js_ast_iterate(root);
   JSAST* first = iterator.current;
   ASSERT(first != 0);
-  ASSERT(first->type == JS_AST_BINOP);
-  ASSERT(first->left != 0);
-  ASSERT(first->right != 0);
-  ASSERT(first->left->type == JS_AST_ID);
-  ASSERT(first->right->type == JS_AST_CALL);
-  JSAST *call = first->right;
-  ASSERT(call->args->size == 1);
-  JSAST *arg1 = (JSAST *)call->args->items[0];
+  ASSERT(first->type == JS_AST_CALL);
+  ASSERT(first->args->size == 1);
+  JSAST *arg1 = (JSAST *)first->args->items[0];
   ASSERT(arg1 != 0);
   ASSERT(arg1->type == JS_AST_STRING);
   ASSERT(arg1->value_str != 0);
@@ -92,13 +87,10 @@ void test_foreach_js() {
   it = iterator.current;
 
   ASSERT(it != 0);
-  ASSERT(it->type == JS_AST_BINOP);
+  ASSERT(it->type == JS_AST_CALL);
   ASSERT(it->left != 0);
-  ASSERT(it->left->type == JS_AST_ID);
-  ASSERT(it->right != 0);
-  ASSERT(it->right->type == JS_AST_CALL);
-  ASSERT(it->right->args->size == 1);
-  ASSERT(((JSAST*)it->right->args->items[0])->type == JS_AST_FUNCTION);
+  ASSERT(it->args->size == 1);
+  ASSERT(((JSAST*)it->args->items[0])->type == JS_AST_FUNCTION);
 
   js_ast_free(root);
 }
@@ -125,9 +117,7 @@ void test_map_js() {
   ASSERT(it != 0);
   ASSERT(it->type == JS_AST_DEFINITION);
   ASSERT(it->right != 0);
-  ASSERT(it->right->type == JS_AST_BINOP);
-  ASSERT(it->right->right != 0);
-  ASSERT(it->right->right->type == JS_AST_CALL);
+  ASSERT(it->right->type == JS_AST_CALL);
   JSAST* result = js_eval(it->right, execution.frame, &execution);
   ASSERT(result != 0);
   ASSERT(result->type == JS_AST_ARRAY);
@@ -165,6 +155,24 @@ void test_if_js() {
   js_ast_free(root);
 }
 
+void test_object_nested_js() {
+  EX(root, "sourcefiles/object_nested.js", "2.00\n", 1);
+  JSAST* root = execution.result;
+  ASSERT(root != 0);
+}
+
+void test_object_assign_js() {
+  EX(root, "sourcefiles/object_assign.js", "33.00\n1.00\n", 1);
+  JSAST* root = execution.result;
+  ASSERT(root != 0);
+}
+
+void test_object_nested_assign_js() {
+  EX(root, "sourcefiles/object_nested_assign.js", "2.00\n5.00\n", 1);
+  JSAST* root = execution.result;
+  ASSERT(root != 0);
+}
+
 void test_projects_calculator_index_js() {
   EX(root, "sourcefiles/projects/calculator/index.js", "10.00\n5.00\n", 1);
   JSAST* root = execution.result;
@@ -178,6 +186,9 @@ int main(int argc, char *argv[]) {
   test_map_js();
   test_string_length_js();
   test_if_js();
+  test_object_nested_js();
+  test_object_nested_assign_js();
+  test_object_assign_js();
   test_projects_calculator_index_js();
 
   return 0;

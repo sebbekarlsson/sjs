@@ -339,6 +339,40 @@ char *js_ast_function_to_string(JSAST *ast) {
   return str;
 }
 
+char *js_ast_binop_to_string(JSAST *ast) {
+  char *str = 0;
+
+  js_str_append(&str, "(");
+
+  JSAST *left = ast->left;
+  JSAST *right = ast->right;
+  JSTokenType type = ast->token_type;
+
+  char *leftstr = left ? js_ast_to_string(left) : 0;
+  char *rightstr = right ? js_ast_to_string(right) : 0;
+  char *tokstr = js_token_type_to_str(type);
+
+  if (leftstr) {
+    js_str_append(&str, leftstr);
+    free(leftstr);
+  }
+
+  if (tokstr) {
+    js_str_append(&str, " ");
+    js_str_append(&str, tokstr);
+    js_str_append(&str, " ");
+  }
+
+  if (rightstr) {
+    js_str_append(&str, rightstr);
+    free(rightstr);
+  }
+
+  js_str_append(&str, ")");
+
+  return str;
+}
+
 char *js_ast_to_string(JSAST *ast) {
   switch (ast->type) {
   case JS_AST_ARRAY:
@@ -349,6 +383,9 @@ char *js_ast_to_string(JSAST *ast) {
     break;
   case JS_AST_FUNCTION:
     return js_ast_function_to_string(ast);
+    break;
+  case JS_AST_BINOP:
+    return js_ast_binop_to_string(ast);
     break;
   default: { return js_ast_str_value(ast); }
   }
