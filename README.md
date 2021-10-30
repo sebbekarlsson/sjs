@@ -25,6 +25,8 @@
 > So I thought it would be fun to write my own.  
 > Eventually some other ideas came to mind as well and now it's not just a Javascript engine anymore (theoretically).
 
+----------------------
+
 ## Building it
 ### Build dependencies
 > To build `sjs` you will need:
