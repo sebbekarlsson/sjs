@@ -71,7 +71,7 @@ void *builtin_array_from(void *ptr, list_T *args, map_T *stack,
                          JSExecution *execution) {
   JSAST *arg1 = args->items[0];
 
-  JSAST *newarr = init_js_ast_blank(JS_AST_ARRAY);
+  JSAST *newarr = init_js_ast(JS_AST_ARRAY);
   newarr->children = js_ast_to_array(arg1);
   return newarr;
 }
