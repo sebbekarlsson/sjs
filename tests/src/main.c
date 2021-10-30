@@ -173,6 +173,12 @@ void test_object_nested_assign_js() {
   ASSERT(root != 0);
 }
 
+void test_construct_js() {
+  EX(root, "sourcefiles/construct.js", "John\nDoe\n", 1);
+  JSAST* root = execution.result;
+  ASSERT(root != 0);
+}
+
 void test_projects_calculator_index_js() {
   EX(root, "sourcefiles/projects/calculator/index.js", "10.00\n5.00\n", 1);
   JSAST* root = execution.result;
@@ -189,6 +195,7 @@ int main(int argc, char *argv[]) {
   test_object_nested_js();
   test_object_nested_assign_js();
   test_object_assign_js();
+  test_construct_js();
   test_projects_calculator_index_js();
 
   return 0;

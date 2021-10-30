@@ -347,7 +347,22 @@ JSAST *js_parser_parse_throw(JSParser *parser) {
   return ast;
 }
 
+JSAST *js_parser_parse_unop(JSParser *parser) {
+  JSAST *left = 0;
+  while ((parser->token->type == TOKEN_TILDE)) {
+    JSAST *unop = init_js_ast(JS_AST_UNOP);
+    MARK(unop);
+    unop->token_type = parser->token->type;
+    js_parser_eat(parser, parser->token->type);
+    unop->right = js_parser_parse_expr(parser);
+    left = unop;
+  }
+  return left;
+}
+
 JSAST *js_parser_parse_factor(JSParser *parser) {
+  if (parser->token->type == TOKEN_TILDE)
+    return js_parser_parse_unop(parser);
   if (should_parse_definition(parser)) {
     return js_parser_parse_definition(parser);
   }
@@ -436,6 +451,21 @@ JSAST *js_parser_parse_factor(JSParser *parser) {
 JSAST *js_parser_parse_term(JSParser *parser) {
   JSAST *left = js_parser_parse_factor(parser);
   MARK(left);
+
+  while (left && (parser->token->type == TOKEN_AND ||
+                  parser->token->type == TOKEN_PIPE ||
+                  parser->token->type == TOKEN_BITWISE_XOR ||
+                  parser->token->type == TOKEN_BITWISE_ZERO_FILL_LEFT_SHIFT ||
+                  parser->token->type == TOKEN_BITWISE_SIGNED_RIGHT_SHIFT ||
+                  parser->token->type == TOKEN_BITWISE_ZERO_FILL_RIGHT_SHIFT)) {
+    JSAST *binop = init_js_ast(JS_AST_BINOP);
+    MARK(binop);
+    binop->left = left;
+    binop->token_type = parser->token->type;
+    js_parser_eat(parser, parser->token->type);
+    binop->right = js_parser_parse_expr(parser);
+    left = binop;
+  }
 
   while (left && (parser->token->type == TOKEN_MINUS_EQUALS ||
                   parser->token->type == TOKEN_PLUS_EQUALS)) {

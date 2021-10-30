@@ -169,6 +169,19 @@ JSToken *js_lexer_get_next_token(JSLexer *lexer) {
       return js_lexer_tok_n(lexer, TOKEN_DECREMENT, 2);
     }
 
+    if (lexer->c == '>' && js_lexer_peek(lexer, 1) == '>' &&
+        js_lexer_peek(lexer, 2) == '>') {
+      return js_lexer_tok_n(lexer, TOKEN_BITWISE_ZERO_FILL_RIGHT_SHIFT, 3);
+    }
+
+    if (lexer->c == '<' && js_lexer_peek(lexer, 1) == '<') {
+      return js_lexer_tok_n(lexer, TOKEN_BITWISE_ZERO_FILL_LEFT_SHIFT, 2);
+    }
+
+    if (lexer->c == '>' && js_lexer_peek(lexer, 1) == '>') {
+      return js_lexer_tok_n(lexer, TOKEN_BITWISE_SIGNED_RIGHT_SHIFT, 2);
+    }
+
     switch (lexer->c) {
     case '{':
       return js_lexer_tok(lexer, TOKEN_LBRACE);
@@ -219,7 +232,7 @@ JSToken *js_lexer_get_next_token(JSLexer *lexer) {
     case '#':
       return js_lexer_tok(lexer, TOKEN_HASH);
     case '^':
-      return js_lexer_tok(lexer, TOKEN_SQUARED);
+      return js_lexer_tok(lexer, TOKEN_BITWISE_XOR);
     case '~':
       return js_lexer_tok(lexer, TOKEN_TILDE);
     case '\0':

@@ -20,7 +20,7 @@ function (generate_files)
     GIT_REPOSITORY https://github.com/sebbekarlsson/gpp.git
     )
   FetchContent_MakeAvailable(gpp)
-  file(COPY ${xjs_SOURCE_DIR}/context.json DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+  file(COPY ${sjs_SOURCE_DIR}/context.json DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
 
 
   file(GLOB js_builtins ${CMAKE_CURRENT_SOURCE_DIR}/src/builtins/*.gpp)
@@ -31,7 +31,7 @@ function (generate_files)
     get_filename_component(barename ${gpp_file} NAME)
     set(outfile ${CMAKE_CURRENT_BINARY_DIR}/generated/${barename}.h)
     build_custom(
-      "xjs_e;xjs_static;xjs"
+      "sjs;sjs_static;sjs_shared"
       ${barename}
       "mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/generated && gpp ${gpp_file} > ${outfile}"
       ${CMAKE_CURRENT_SOURCE_DIR}/src/builtins/${gpp_file}
@@ -39,5 +39,5 @@ function (generate_files)
     )
   endforeach()
   include_directories(${CMAKE_CURRENT_BINARY_DIR}/generated)
-  include_directories(${xjs_BINARY_DIR}/generated)
+  include_directories(${sjs_BINARY_DIR}/generated)
 endfunction()

@@ -93,6 +93,19 @@ JSAST *js_eval_string_concat(JSAST *left, JSAST *right) {
     return name;                                                               \
   }
 
+#define MATH_OP_I_R1(name, ast, op, stack)                                     \
+  {                                                                            \
+    JSAST *left = js_eval(ast, stack, execution);                              \
+    int x = left->value_int;                                                   \
+    JSAST *name = init_js_ast_result(JS_AST_NUMBER);                           \
+    MARK(name);                                                                \
+    name->value_int = op x;                                                    \
+    name->value_num = (float)ceil(name->value_int);                            \
+    left->value_num = name->value_num;                                         \
+    left->value_int = name->value_int;                                         \
+    return name;                                                               \
+  }
+
 #define MATH_OP_I(name, ast, op, stack)                                        \
   {                                                                            \
     JSAST *left = js_eval(ast->left, stack, execution);                        \
@@ -566,6 +579,24 @@ JSAST *js_eval_binop(JSAST *ast, map_T *stack, JSExecution *execution) {
   case TOKEN_DOT:
     return js_eval_dot(ast, stack, execution);
     break;
+  case TOKEN_AND:
+    MATH_OP_I(result, ast, &, stack);
+    break;
+  case TOKEN_PIPE:
+    MATH_OP_I(result, ast, |, stack);
+    break;
+  case TOKEN_BITWISE_XOR:
+    MATH_OP_I(result, ast, ^, stack);
+    break;
+  case TOKEN_BITWISE_ZERO_FILL_LEFT_SHIFT:
+    MATH_OP_I(result, ast, <<, stack);
+    break;
+  case TOKEN_BITWISE_SIGNED_RIGHT_SHIFT:
+    MATH_OP_I(result, ast, >>, stack);
+    break;
+  case TOKEN_BITWISE_ZERO_FILL_RIGHT_SHIFT:
+    MATH_OP_I(result, ast, >>, stack);
+    break;
   case TOKEN_PLUS:
     MATH_OP_F(result, ast, +, stack);
     break;
@@ -755,11 +786,23 @@ JSAST *js_eval_unop_left(JSAST *ast, map_T *stack, JSExecution *execution) {
   return ast->left;
 }
 
-// TODO: implement
 JSAST *js_eval_unop_right(JSAST *ast, map_T *stack, JSExecution *execution) {
-  JSAST *newast = init_js_ast_result(JS_AST_UNDEFINED);
-  MARK(newast);
-  return newast;
+  JSAST *value = js_eval(ast->right, stack, execution);
+  if (value != 0) {
+    switch (ast->token_type) {
+    case TOKEN_TILDE:
+      MATH_OP_I_R1(result, value, ~, stack);
+      break;
+    default: {
+      printf("Error %s\n", js_token_type_to_str(ast->token_type));
+      exit(1);
+    }
+    }
+
+    return value;
+  }
+
+  return ast->right;
 }
 
 JSAST *js_eval_unop(JSAST *ast, map_T *stack, JSExecution *execution) {

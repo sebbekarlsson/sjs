@@ -8,7 +8,7 @@ static int interactive() {
   JSExecution execution = {1};
   while (1) {
     memset(buff, 0, 1028 * sizeof(char));
-    printf("(XJS)$ ");
+    printf("(SJS)$ ");
     fgets(buff, 1028, stdin);
     js_execute_str(buff, &execution);
     js_lexer_free(execution.lexer);

@@ -2,7 +2,7 @@
     <img width="256px" src="img/logo.jpg"/>
 </p>
 
-# XJS
+# SJS
 > Javascript Engine
 
 ## What is it?
@@ -15,7 +15,7 @@
 
 ## Building it
 ### Build dependencies
-> To build `xjs` you will need:
+> To build `sjs` you will need:
 * cmake
 * gcc
 ### Build instructions
