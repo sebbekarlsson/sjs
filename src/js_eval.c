@@ -40,6 +40,8 @@ static unsigned int is_true(JSAST *ast) {
 }
 
 void stack_pop(map_T *stack, const char *key) {
+  if (key == 0)
+    return;
   JSAST *ast = (JSAST *)map_get_value(stack, key);
   if (ast == 0)
     return;
@@ -109,6 +111,18 @@ JSAST *js_eval(JSAST *ast, map_T *stack, JSExecution *execution) {
   switch (ast->type) {
   case JS_AST_IMPORT:
     R = js_eval_import(ast, stack, execution);
+    break;
+  case JS_AST_CONSTRUCT:
+    R = js_eval_construct(ast, stack, execution);
+    break;
+  case JS_AST_THROW:
+    R = js_eval_throw(ast, stack, execution);
+    break;
+  case JS_AST_TRY:
+    R = js_eval_try(ast, stack, execution);
+    break;
+  case JS_AST_CATCH:
+    R = js_eval_catch(ast, stack, execution);
     break;
   case JS_AST_COMPOUND:
     R = js_eval_compound(ast, stack, execution);
@@ -201,6 +215,7 @@ JSAST *js_eval_statement(JSAST *ast, map_T *stack, JSExecution *execution) {
 JSAST *js_call_function(JSAST *self, JSAST *ast, JSFunction *fptr,
                         list_T *call_args, list_T *expected_args, map_T *stack,
                         JSExecution *execution) {
+
   stack_pop(stack, STACK_ADDR_RETURN);
 
   list_T *evaluated_args = init_list(sizeof(JSAST *));
@@ -232,6 +247,7 @@ JSAST *js_call_function(JSAST *self, JSAST *ast, JSFunction *fptr,
   JSAST *ret = (JSAST *)map_get_value(stack, STACK_ADDR_RETURN);
   ret = ret ? ret : result ? result : init_js_ast_result(JS_AST_UNDEFINED);
   MARK(ret);
+
   return ret;
 }
 
@@ -245,6 +261,22 @@ JSAST *js_eval_call(JSAST *ast, map_T *stack, JSExecution *execution) {
   JSAST *self = left->accessed ? left->accessed : left;
 
   JSAST *res = 0;
+  if (map_get(stack, STACK_ADDR_CONSTRUCT_FLAG) != 0) {
+    map_set(stack, STACK_ADDR_CONSTRUCT_CALLER, ast);
+    return left;
+  }
+
+  if (left->fptr == 0 && left->type != JS_AST_FUNCTION) {
+    JSAST *construct = js_ast_get_constructor(left);
+    if (construct != 0) {
+      return left;
+    }
+  }
+
+  if (left->fptr == 0 && left->type != JS_AST_FUNCTION) {
+    printf("Error: %s is not a function.\n", js_ast_to_string(ast));
+    return ast;
+  }
 
   if (left->fptr != 0) {
     res = js_call_function(self, 0, left->fptr, ast->args, left->args, stack,
@@ -402,6 +434,66 @@ JSAST *js_eval_for(JSAST *ast, map_T *stack, JSExecution *execution) {
   return ast;
 }
 
+JSAST *js_eval_construct(JSAST *ast, map_T *stack, JSExecution *execution) {
+  int flag = 1;
+  map_set(stack, STACK_ADDR_CONSTRUCT_FLAG, &flag);
+  JSAST *right = js_eval(ast->right, stack, execution);
+  map_unset(stack, STACK_ADDR_CONSTRUCT_FLAG);
+  JSAST *caller = (JSAST *)map_get_value(stack, STACK_ADDR_CONSTRUCT_CALLER);
+  assert(caller != 0);
+  assert(caller->type == JS_AST_CALL);
+  assert(right != 0);
+  assert(right->fptr != 0 || right->type == JS_AST_FUNCTION);
+  JSAST *construct = js_ast_get_constructor(right);
+
+  if (construct != 0) {
+    right = construct;
+  }
+
+  JSAST *self = init_js_ast_result(JS_AST_OBJECT);
+  MARK(self);
+  map_set(stack, STACK_ADDR_THIS, self);
+  js_call_function(self, right, right->fptr, caller->args, right->args, stack,
+                   execution);
+
+  if (construct == 0)
+    map_set(self->keyvalue, "constructor", right);
+
+  stack_pop(stack, STACK_ADDR_THIS);
+
+  return self;
+}
+
+JSAST *js_eval_throw(JSAST *ast, map_T *stack, JSExecution *execution) {
+  JSAST *right = js_eval(ast->right, stack, execution);
+  return right;
+}
+JSAST *js_eval_try(JSAST *ast, map_T *stack, JSExecution *execution) {
+  if (ast->body == 0)
+    return ast;
+
+  JSAST *body = js_eval(ast->body, stack, execution);
+
+  JSAST *except = (JSAST *)map_get_value(stack, STACK_ADDR_EXCEPTION);
+
+  if (except != 0 && ast->right) {
+    JSAST *catchblock = ast->right;
+    if (catchblock->args && catchblock->args->size) {
+      JSAST *first = (JSAST *)catchblock->args->items[0];
+      assert(first && first->value_str != 0);
+      char *name = first->value_str;
+      map_set(stack, name, except);
+      JSAST *evaluated = js_eval(catchblock, stack, execution);
+      stack_pop(stack, name);
+      return evaluated;
+    }
+    return catchblock;
+  }
+
+  return body;
+}
+JSAST *js_eval_catch(JSAST *ast, map_T *stack, JSExecution *execution) {}
+
 JSAST *js_eval_definition(JSAST *ast, map_T *stack, JSExecution *execution) {
   if (ast->right && ast->right->type == JS_AST_FUNCTION) {
     ast->right->value_str =
@@ -418,14 +510,32 @@ JSAST *js_eval_definition(JSAST *ast, map_T *stack, JSExecution *execution) {
 }
 JSAST *js_eval_assignment(JSAST *ast, map_T *stack, JSExecution *execution) {
   JSAST *left = js_eval(ast->left, stack, execution);
+
+  if (left == 0) {
+    printf("Error: assignment left is 0.\n");
+    exit(1);
+  }
+
   if (left->type == JS_AST_ID)
     return ast; // never want to modify ID.
 
   JSAST *right = js_eval(ast->right, stack, execution);
 
-  if (left->value_str != 0 && right->value_str != 0) {
-    free(left->value_str);
-    left->value_str = 0;
+  if (left && left->type == JS_AST_OBJECT && ast->left->type == JS_AST_BINOP) {
+    JSAST *named = js_ast_most_right(ast->left);
+
+    if (named != 0 && named->value_str != 0) {
+      JSAST *obj = left;
+      left = init_js_ast(JS_AST_UNDEFINED);
+      map_set(obj->keyvalue, named->value_str, left);
+    }
+  }
+
+  if (right->value_str != 0 && left->value_str != right->value_str) {
+    if (left->value_str != 0) {
+      free(left->value_str);
+      left->value_str = 0;
+    }
     left->value_str = strdup(right->value_str);
   }
 
@@ -545,8 +655,14 @@ JSAST *js_eval_dot(JSAST *ast, map_T *stack, JSExecution *execution) {
   } else {
     result = key ? obj ? (JSAST *)map_get_value(obj, key) : 0 : 0;
 
-    if (result == 0 && left->prototype != 0) {
-      obj = left->prototype->keyvalue;
+    if (result == 0 && left->type == JS_AST_OBJECT) {
+      return left;
+    }
+
+    JSAST *proto = js_ast_get_prototype(left);
+
+    if (result == 0 && proto != 0) {
+      obj = proto->keyvalue;
       result = key ? obj ? (JSAST *)map_get_value(obj, key) : 0 : 0;
 
       if (result != 0) {
@@ -562,7 +678,10 @@ JSAST *js_eval_dot(JSAST *ast, map_T *stack, JSExecution *execution) {
 
   if (ast->right != 0) {
     right = js_eval(ast->right, stack, execution);
-    return right;
+
+    if (result == 0) {
+      return right;
+    }
   }
 
   result = result ? result : init_js_ast_result(JS_AST_UNDEFINED);

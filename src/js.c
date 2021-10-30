@@ -28,14 +28,19 @@ void js_execute_str(char *str, JSExecution *execution) {
 
   if (ex.gc == 0) {
     ex.gc = init_js_gc();
+    *execution = ex;
   }
 
   JSLexer *lexer = init_js_lexer(str);
   JSParser *parser = init_js_parser(lexer, execution);
   JSAST *root = js_parser_parse(parser);
   js_gc_ast(execution->gc, root);
-  map_T *frame = setup_js_frame(execution);
-  ex.frame = frame;
+
+  map_T *frame = ex.frame;
+  if (frame == 0) {
+    frame = setup_js_frame(execution);
+    ex.frame = frame;
+  }
   ex.lexer = lexer;
   ex.root = root;
   ex.parser = parser;

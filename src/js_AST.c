@@ -21,10 +21,10 @@ JSAST *js_ast_constructor(JSAST *ast, JSASTType type) {
   ast->marked = 0;
   switch (type) {
   case JS_AST_ARRAY: {
-    ast->prototype = init_js_builtin_array_prototype(ast);
+    map_set(ast->keyvalue, "prototype", init_js_builtin_array_prototype(ast));
   } break;
   case JS_AST_STRING: {
-    ast->prototype = init_js_builtin_string_prototype(ast);
+    map_set(ast->keyvalue, "prototype", init_js_builtin_string_prototype(ast));
   } break;
   default: {
     // noop
@@ -103,7 +103,7 @@ JSAST *js_ast_copy(JSAST *src) {
   copy->right = js_ast_copy(src->right);
   copy->body = js_ast_copy(src->body);
   copy->expr = js_ast_copy(src->expr);
-  copy->prototype = js_ast_copy(src->prototype);
+  // copy->prototype = js_ast_copy(src->prototype);
 
   copy->value_num = src->value_num;
   copy->value_int = src->value_int;
@@ -492,4 +492,62 @@ list_T *js_ast_get_keys_asts(JSAST *ast) {
   }
 
   return new_arr;
+}
+
+JSAST *js_ast_most_right(JSAST *ast) {
+  if (ast == 0)
+    return ast;
+  JSAST *right = ast->right;
+
+  while (right != 0) {
+    if (right->right != 0) {
+      right = right->right;
+    } else {
+      return right;
+    }
+  }
+
+  return right == 0 ? ast : right;
+}
+
+JSAST *js_ast_get_prototype(JSAST *ast) {
+  if (ast == 0)
+    return 0;
+  if (ast->keyvalue == 0)
+    return 0;
+
+  JSAST *proto = (JSAST *)map_get_value(ast->keyvalue, "prototype");
+
+  return proto;
+}
+
+JSAST *js_ast_get_constructor(JSAST *ast) {
+  if (ast == 0)
+    return ast;
+  if (ast->keyvalue == 0)
+    return 0;
+
+  JSAST *construct = (JSAST *)map_get_value(ast->keyvalue, "constructor");
+
+  if (construct == 0) {
+    JSAST *proto = js_ast_get_prototype(ast);
+    if (proto != 0) {
+      construct = (JSAST *)map_get_value(proto->keyvalue, "constructor");
+    }
+  }
+
+  return construct;
+}
+
+void js_ast_set_prototype(JSAST *ast, JSAST *prototype) {
+  if (ast == 0)
+    return;
+  if (ast->keyvalue == 0)
+    return;
+
+  if (prototype == 0) {
+    map_unset(ast->keyvalue, "prototype");
+  } else {
+    map_set(ast->keyvalue, "prototype", prototype);
+  }
 }

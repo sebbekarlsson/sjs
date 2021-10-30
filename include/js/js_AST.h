@@ -21,6 +21,7 @@ typedef struct JS_AST_STRUCT {
   struct JS_AST_STRUCT *prototype;
   struct JS_AST_STRUCT *prototype_child;
   struct JS_AST_STRUCT *accessed;
+  struct JS_AST_STRUCT *constructor;
   float value_num;
   int value_int;
   uint32_t *value_int_ptr;
@@ -64,6 +65,14 @@ void js_ast_maybe_free(JSAST *ast);
 char *js_ast_str_value(JSAST *ast);
 
 char *js_ast_to_string(JSAST *ast);
+
+JSAST *js_ast_most_right(JSAST *ast);
+
+JSAST *js_ast_get_constructor(JSAST *ast);
+
+JSAST *js_ast_get_prototype(JSAST *ast);
+
+void js_ast_set_prototype(JSAST *ast, JSAST *prototype);
 
 list_T *js_ast_get_values(JSAST *ast);
 list_T *js_ast_get_keys(JSAST *ast);

@@ -100,7 +100,8 @@ JSAST *init_js_builtin_array_prototype(JSAST *child) {
 }
 
 JSAST *init_js_builtin_array() {
-  JSAST *arr = init_js_ast(JS_AST_OBJECT);
+  JSAST *arr = init_js_ast(JS_AST_FUNCTION);
+  js_ast_set_value_str(arr, "Array");
 
   js_builtin_array_init_static_functions(arr);
 

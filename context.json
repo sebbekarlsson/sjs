@@ -125,7 +125,11 @@
         "JS_AST_WHILE",
         "JS_AST_FOR",
         "JS_AST_PROPERTY_ACCESS",
-        "JS_AST_IMPORT"
+        "JS_AST_IMPORT",
+        "JS_AST_CONSTRUCT",
+        "JS_AST_TRY",
+        "JS_AST_CATCH",
+        "JS_AST_THROW"
     ],
     "nrJsEvents": 507,
     "jsEvents": [
@@ -681,6 +685,13 @@
             "name": "forEach",
             "ptr": "builtin_array_foreach",
             "args": ["foreach_func"]
+        }
+    ],
+    "error_prototype_builtins": [
+        {
+            "name": "constructor",
+            "ptr": "js_builtin_error_public_constructor",
+            "args": ["message"]
         }
     ]
 }

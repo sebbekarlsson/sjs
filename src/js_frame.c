@@ -1,5 +1,6 @@
 #include <js/builtins/array.h>
 #include <js/builtins/console/console.h>
+#include <js/builtins/error.h>
 #include <js/builtins/math.h>
 #include <js/builtins/object.h>
 #include <js/builtins/process.h>
@@ -90,6 +91,10 @@ map_T *setup_js_frame(JSExecution *execution) {
   JSAST *math = init_js_builtin_math(execution);
   GC_MARK(math);
   map_set(frame, "Math", math);
+
+  JSAST *error = init_js_builtin_error();
+  GC_MARK(error);
+  map_set(frame, "Error", error);
 
   // TODO: implement Boolean
   // TODO: implement Boolean

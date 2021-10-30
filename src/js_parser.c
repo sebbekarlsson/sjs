@@ -23,7 +23,9 @@ static unsigned int should_parse_statement(JSParser *parser) {
          token->type == TOKEN_WHILE || token->type == TOKEN_FOR ||
          token->type == TOKEN_FUNCTION || token->type == TOKEN_CONST ||
          token->type == TOKEN_VAR || token->type == TOKEN_LET ||
-         token->type == TOKEN_IMPORT || token->type == TOKEN_EXPORT;
+         token->type == TOKEN_IMPORT || token->type == TOKEN_EXPORT ||
+         token->type == TOKEN_NEW || token->type == TOKEN_TRY ||
+         token->type == TOKEN_CATCH || token->type == TOKEN_THROW;
 }
 
 static unsigned int should_parse_definition(JSParser *parser) {
@@ -247,6 +249,44 @@ JSAST *js_parser_parse_if(JSParser *parser) {
 
   return ast;
 }
+JSAST *js_parser_parse_try(JSParser *parser) {
+  JSAST *ast = init_js_ast(JS_AST_TRY);
+  MARK(ast);
+
+  if (parser->token->type == TOKEN_CATCH) {
+    ast->type = JS_AST_CATCH;
+    js_parser_eat(parser, TOKEN_CATCH);
+  }
+
+  if (parser->token->type == TOKEN_TRY) {
+    js_parser_eat(parser, TOKEN_TRY);
+  }
+
+  if (parser->token->type == TOKEN_LPAREN) {
+    js_parser_eat(parser, TOKEN_LPAREN);
+
+    if (parser->token->type != TOKEN_RPAREN) {
+      js_parser_parse_multiple(parser, ast->args, TOKEN_COMMA);
+    }
+
+    js_parser_eat(parser, TOKEN_RPAREN);
+  }
+
+  if (parser->token->type == TOKEN_LBRACE) {
+    js_parser_eat(parser, TOKEN_LBRACE);
+
+    if (parser->token->type != TOKEN_RBRACE) {
+      ast->body = js_parser_parse_body(parser);
+    }
+    js_parser_eat(parser, TOKEN_RBRACE);
+  }
+
+  if (parser->token->type == TOKEN_CATCH) {
+    ast->right = js_parser_parse_try(parser);
+  }
+
+  return ast;
+}
 JSAST *js_parser_parse_while(JSParser *parser) {
   JSAST *ast = init_js_ast(JS_AST_WHILE);
   MARK(ast);
@@ -293,9 +333,26 @@ JSAST *js_parser_parse_for(JSParser *parser) {
   return ast;
 }
 
+JSAST *js_parser_parse_construct(JSParser *parser) {
+  js_parser_eat(parser, TOKEN_NEW);
+  JSAST *ast = init_js_ast(JS_AST_CONSTRUCT);
+  ast->right = js_parser_parse_expr(parser);
+  return ast;
+}
+
+JSAST *js_parser_parse_throw(JSParser *parser) {
+  js_parser_eat(parser, TOKEN_THROW);
+  JSAST *ast = init_js_ast(JS_AST_THROW);
+  ast->right = js_parser_parse_expr(parser);
+  return ast;
+}
+
 JSAST *js_parser_parse_factor(JSParser *parser) {
   if (should_parse_definition(parser)) {
     return js_parser_parse_definition(parser);
+  }
+  if (parser->token->type == TOKEN_NEW) {
+    return js_parser_parse_construct(parser);
   }
   if (parser->token->type == TOKEN_LBRACE) {
     return js_parser_parse_object(parser);
@@ -573,6 +630,10 @@ JSAST *js_parser_parse_statement(JSParser *parser) {
   case TOKEN_ELSE:
     return js_parser_parse_if(parser);
     break;
+  case TOKEN_TRY:
+  case TOKEN_CATCH:
+    return js_parser_parse_try(parser);
+    break;
   case TOKEN_WHILE:
     return js_parser_parse_while(parser);
     break;
@@ -593,6 +654,12 @@ JSAST *js_parser_parse_statement(JSParser *parser) {
     break;
   case TOKEN_IMPORT:
     return js_parser_parse_import(parser);
+    break;
+  case TOKEN_NEW:
+    return js_parser_parse_construct(parser);
+    break;
+  case TOKEN_THROW:
+    return js_parser_parse_throw(parser);
     break;
   default:
     return js_parser_parse_any_statement(parser);

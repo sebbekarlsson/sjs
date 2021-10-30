@@ -4,7 +4,11 @@
 
 struct JS_EXECUTION_STRUCT;
 
-#define STACK_ADDR_RETURN "RETURN"
+#define STACK_ADDR_RETURN "___RETURN___"
+#define STACK_ADDR_CONSTRUCT_FLAG "___NEW___"
+#define STACK_ADDR_CONSTRUCT_CALLER "___NEW_CALLER___"
+#define STACK_ADDR_THIS "this"
+#define STACK_ADDR_EXCEPTION "___EXCEPTION___"
 
 JSAST *js_eval(JSAST *ast, map_T *stack, struct JS_EXECUTION_STRUCT *execution);
 JSAST *js_maybe_eval(JSAST *ast, map_T *stack,
@@ -31,6 +35,19 @@ JSAST *js_eval_while(JSAST *ast, map_T *stack,
                      struct JS_EXECUTION_STRUCT *execution);
 JSAST *js_eval_for(JSAST *ast, map_T *stack,
                    struct JS_EXECUTION_STRUCT *execution);
+
+JSAST *js_eval_construct(JSAST *ast, map_T *stack,
+                         struct JS_EXECUTION_STRUCT *execution);
+
+JSAST *js_eval_try(JSAST *ast, map_T *stack,
+                   struct JS_EXECUTION_STRUCT *execution);
+
+JSAST *js_eval_catch(JSAST *ast, map_T *stack,
+                     struct JS_EXECUTION_STRUCT *execution);
+
+JSAST *js_eval_throw(JSAST *ast, map_T *stack,
+                     struct JS_EXECUTION_STRUCT *execution);
+
 JSAST *js_eval_property_access(JSAST *ast, map_T *stack,
                                struct JS_EXECUTION_STRUCT *execution);
 JSAST *js_eval_binop(JSAST *ast, map_T *stack,
