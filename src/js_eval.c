@@ -2,6 +2,7 @@
 #include <js/js.h>
 #include <js/js_eval.h>
 #include <js/js_path.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -37,6 +38,11 @@ static unsigned int is_dry(map_T *stack, JSExecution *execution) {
 
 static unsigned int is_true(JSAST *ast) {
   return ((ast->is_true) || ast->value_int);
+}
+
+static unsigned int is_empty(JSAST *ast) {
+  return ((ast->value_int <= 0 && ast->value_num <= 0 && ast->value_str == 0) ||
+          ast->value_str != 0 && strlen(ast->value_str) == 0);
 }
 
 void stack_pop(map_T *stack, const char *key) {
@@ -574,10 +580,24 @@ JSAST *js_eval_assignment(JSAST *ast, map_T *stack, JSExecution *execution) {
   return right;
 }
 
+JSAST *js_eval_or(JSAST *ast, map_T *stack, JSExecution *execution) {
+  JSAST *left = js_eval(ast->left, stack, execution);
+  JSAST *right = js_eval(ast->right, stack, execution);
+
+  if (!is_empty(left))
+    return left;
+  if (!is_empty(right))
+    return right;
+  return left;
+}
+
 JSAST *js_eval_binop(JSAST *ast, map_T *stack, JSExecution *execution) {
   switch (ast->token_type) {
   case TOKEN_DOT:
     return js_eval_dot(ast, stack, execution);
+    break;
+  case TOKEN_PIPE_PIPE:
+    return js_eval_or(ast, stack, execution);
     break;
   case TOKEN_AND:
     MATH_OP_I(result, ast, &, stack);

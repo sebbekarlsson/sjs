@@ -479,7 +479,8 @@ JSAST *js_parser_parse_term(JSParser *parser) {
   }
 
   while (left && (parser->token->type == TOKEN_STAR ||
-                  parser->token->type == TOKEN_DIV)) {
+                  parser->token->type == TOKEN_DIV ||
+                  parser->token->type == TOKEN_PIPE_PIPE)) {
     JSAST *binop = init_js_ast(JS_AST_BINOP);
     MARK(binop);
     binop->left = left;

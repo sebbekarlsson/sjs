@@ -141,6 +141,10 @@ JSToken *js_lexer_get_next_token(JSLexer *lexer) {
     if (lexer->c == '\'' || lexer->c == '"')
       return js_lexer_parse_str(lexer);
 
+    if (lexer->c == '|' && js_lexer_peek(lexer, 1) == '|') {
+      return js_lexer_tok_n(lexer, TOKEN_PIPE_PIPE, 2);
+    }
+
     if (lexer->c == '&' && js_lexer_peek(lexer, 1) == '&') {
       return js_lexer_tok_n(lexer, TOKEN_AND_AND, 2);
     }
