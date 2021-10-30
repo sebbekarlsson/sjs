@@ -18,6 +18,14 @@
 > Everything is implemented from the ground up here, meaning that the whole Javascript runtime
 > is written from scratch.  
 > We're talking lexical analysis, parsing, evaluation, and eventually also a frontend that will support `C`, `32bit assembly`, `64bit assembly`.
+> 
+> This also means that every built-in symbol you would find in Javascript is also implemented from scratch, such as:
+* Math
+* Math.cos
+* ...
+* Object
+* console
+* ... etc
 
 ## Why?
 > Well, I've always thought it would be cool to have a language simple as Javascript that could also be compiled to machine code. So that's one reason.  
