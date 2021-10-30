@@ -14,7 +14,7 @@
 
 #### Runs
 {% for run in mark.runs %}
-* command: {{ run.cmd }}
+* command: `{{ run.cmd }}`
 * time: {{ run.time }}
 {% endfor %}
 {% endmacro %}

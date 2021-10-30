@@ -1,4 +1,4 @@
-# Benchmarks (updated at 2021-10-30 20:48:44.225534)
+# Benchmarks (updated at 2021-10-30 20:51:12.004835)
 
 
 
@@ -24,10 +24,10 @@ console.log(mapped);
 
 #### Runs
 
-* command: sjs sourcefiles/string_map.js
-* time: 0:00:00.002642
+* command: `sjs sourcefiles/string_map.js`
+* time: 0:00:00.002453
 
-* command: node sourcefiles/string_map.js
-* time: 0:00:00.022506
+* command: `node sourcefiles/string_map.js`
+* time: 0:00:00.021729
 
 
