@@ -98,9 +98,10 @@ def main():
     result = reduce(lambda prev, fname: {**prev, fname: dict(runs=(prev[fname] if fname in prev else []) + list(map(lambda func: run_js(fname, func), MARKS[fname])))}, files, dict())
     marks = list(map(lambda filename: dict(filename=filename, **result[filename], code=result[filename]['runs'][0]['code']), files))
 
-    contents = JINJA_ENV.get_template("wrap.md").render(marks=marks, now=datetime.datetime.now())
+    interpreter_content = JINJA_ENV.get_template("interpreter.md").render(marks=marks)
+    main_content = JINJA_ENV.get_template("main.md").render(now=datetime.datetime.now(), contents=[interpreter_content])
 
-    open(OUTNAME, 'w+').write(contents)
+    open(OUTNAME, 'w+').write(main_content)
 
 
 

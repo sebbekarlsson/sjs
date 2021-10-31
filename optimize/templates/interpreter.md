@@ -1,4 +1,4 @@
-# Benchmarks (updated at {{ now }})
+## Interpreter
 
 {% from 'benchmark.md' import render_mark %}
 
