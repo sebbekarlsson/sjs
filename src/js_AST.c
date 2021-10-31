@@ -551,3 +551,22 @@ void js_ast_set_prototype(JSAST *ast, JSAST *prototype) {
     map_set(ast->keyvalue, "prototype", prototype);
   }
 }
+
+int js_ast_get_int(JSAST *ast) {
+  if (ast == 0)
+    return 0;
+  return ast->value_int;
+}
+
+void js_ast_set_int(JSAST *ast, int value) {
+  if (ast == 0)
+    return;
+  ast->value_int = value;
+  ast->value_num = (float)value;
+}
+void js_ast_set_float(JSAST *ast, float value) {
+  if (ast == 0)
+    return;
+  ast->value_num = value;
+  ast->value_int = (int)value;
+}

@@ -185,6 +185,12 @@ void test_or_or_js() {
   ASSERT(root != 0);
 }
 
+void test_parseint_js() {
+  EX(root, "sourcefiles/parseInt.js", "1337.00\n", 1);
+  JSAST* root = execution.result;
+  ASSERT(root != 0);
+}
+
 void test_projects_calculator_index_js() {
   EX(root, "sourcefiles/projects/calculator/index.js", "10.00\n5.00\n", 1);
   JSAST* root = execution.result;
@@ -203,6 +209,7 @@ int main(int argc, char *argv[]) {
   test_object_assign_js();
   test_construct_js();
   test_or_or_js();
+  test_parseint_js();
   test_projects_calculator_index_js();
 
   return 0;

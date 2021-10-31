@@ -644,6 +644,13 @@
         "notification",
         "notification"
     ],
+    "builtin_functions": [
+        {
+            "name": "parseInt",
+            "ptr": "builtin_function_parse_int",
+            "args": ["string", "radix"]
+        }
+    ],
     "process_builtins": [
         {
             "name": "cwd",

@@ -24,8 +24,9 @@ function (generate_files)
 
 
   file(GLOB js_builtins ${CMAKE_CURRENT_SOURCE_DIR}/src/builtins/*.gpp)
+  file(GLOB js_builtin_functions ${CMAKE_CURRENT_SOURCE_DIR}/src/builtins/functions/*.gpp)
   file(GLOB js_enums ${CMAKE_CURRENT_SOURCE_DIR}/src/enums/*.gpp)
-  list(APPEND custom_files ${js_builtins} ${js_enums})
+  list(APPEND custom_files ${js_builtins} ${js_builtin_functions} ${js_enums})
 
   foreach (gpp_file ${custom_files})
     get_filename_component(barename ${gpp_file} NAME)

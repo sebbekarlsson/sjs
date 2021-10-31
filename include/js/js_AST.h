@@ -80,4 +80,9 @@ list_T *js_ast_get_keys_asts(JSAST *ast);
 
 JSIterator js_ast_iterate(JSAST *ast);
 
+int js_ast_get_int(JSAST *ast);
+
+void js_ast_set_int(JSAST *ast, int value);
+void js_ast_set_float(JSAST *ast, float value);
+
 #endif

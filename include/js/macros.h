@@ -5,4 +5,6 @@
 
 #define NEW(T) (T *)js_calloc(1, sizeof(T))
 
+#define OR(a, b) (a ? a : b)
+
 #endif

@@ -1,0 +1,21 @@
+void js_builtin_init_functions(map_T* frame) {
+  {{
+      map(builtin_functions, (@
+      {
+          JSAST *func = init_js_ast(JS_AST_FUNCTION);
+
+          {{
+            map($0.args, (@
+              JSAST *id_{{ $0 }} = init_js_ast(JS_AST_ID);
+              js_ast_set_value_str(id_{{ $0 }}, "{{ $0 }}");
+              list_push(func->args, id_{{ $0 }});
+            @))
+          }}
+
+          func->fptr = (JSFunction*){{ $0.ptr }};
+          js_ast_set_value_str(func, "{{$0.name}}");
+          map_set(frame, "{{ $0.name }}", func);
+      }
+      @))
+  }}
+}
