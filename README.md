@@ -5,6 +5,8 @@
 # Super Javascript
 > Javascript with superpowers
 
+----------------------
+
 ## What is it?
 > It's a Javascript engine; currently just an interpreter but there are more features to come, including:
 * compile to C
@@ -13,6 +15,8 @@
 * bundle for web
 * JSX support
 * Typescript support
+
+----------------------
 
 ## How it's built
 > Everything is implemented from the ground up here, meaning that the whole Javascript runtime
@@ -27,11 +31,19 @@
 * console
 * ... etc
 
+----------------------
+
 ## Why?
 > Well, I've always thought it would be cool to have a language simple as Javascript that could also be compiled to machine code. So that's one reason.  
 > The _real_ reason is that I was writing my own web browser, and I was looking for a Javascript engine;
 > So I thought it would be fun to write my own.  
 > Eventually some other ideas came to mind as well and now it's not just a Javascript engine anymore (theoretically).
+
+----------------------
+
+## Benchmarks
+> You can view benchmarks [here](benchmarks.md)  
+> (_only the interpreter has benchmarks at the moment_)
 
 ----------------------
 
@@ -77,6 +89,8 @@ mkdir -p build && cd build && cmake .. && make
 ```
 > You will now have a binary that can run Javascript.
 
+----------------------
+
 ## TODO
 - [ ] compile to C
 - [ ] compile to 32bit assembly (in progress)
@@ -84,3 +98,11 @@ mkdir -p build && cd build && cmake .. && make
 - [ ] bundle for web
 - [ ] JSX support
 - [ ] Typescript support
+- [ ] write custom assembler
+- [ ] write custom linker
+
+----------------------
+
+## Notes
+> Please note that this is a work in progress, and there might be undefined behavior or things just might not
+> work the way you would expect.

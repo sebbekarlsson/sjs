@@ -60,15 +60,14 @@ target_include_directories(
 include(FetchContent)
 FetchContent_Declare(
   hashmap_static
-  URL /home/ianertson/workspace/hashmap
-  # GIT_REPOSITORY https://github.com/sebbekarlsson/hashmap.git
-  # GIT_TAG master
+  GIT_REPOSITORY https://github.com/sebbekarlsson/hashmap.git
+  GIT_TAG master
 )
 FetchContent_MakeAvailable(hashmap_static)
 
     FetchContent_Declare(
     hdr
-    GIT_REPOSITORY /home/ianertson/workspace/hdr
+    GIT_REPOSITORY https://github.com/sebbekarlsson/hdr.git
     )
   FetchContent_MakeAvailable(hdr)
 
