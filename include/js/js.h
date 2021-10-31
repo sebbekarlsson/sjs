@@ -6,6 +6,16 @@
 #include <js/js_lexer.h>
 #include <js/js_parser.h>
 
+typedef enum {
+  JS_EMIT_NONE,
+  JS_EMIT_ASM32,
+  JS_EMIT_ASM64,
+  JS_EMIT_C99,
+  JS_EMIT_JS
+} JSEmitType;
+
+JSEmitType js_string_to_emit_type(const char *str);
+
 typedef struct JS_EXECUTION_STRUCT {
   unsigned int should_execute;
   unsigned int dry;

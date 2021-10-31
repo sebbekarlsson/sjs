@@ -5,6 +5,9 @@
 #include <js/js_lexer.h>
 #include <js/js_parser.h>
 #include <js/js_path.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 void js_execute_file(const char *filepath, JSExecution *execution) {
   char *contents = get_file_contents(filepath);
@@ -118,4 +121,19 @@ JSAST *js_get_exports(JSAST *modul) {
   assert(modul != 0);
   JSAST *exports = (JSAST *)map_get_value(modul->keyvalue, "exports");
   return exports;
+}
+
+JSEmitType js_string_to_emit_type(const char *str) {
+  if (strcmp(str, "asm32") == 0)
+    return JS_EMIT_ASM32;
+  if (strcmp(str, "asm64") == 0)
+    return JS_EMIT_ASM64;
+  if (strcmp(str, "C99") == 0)
+    return JS_EMIT_C99;
+  if (strcmp(str, "js") == 0)
+    return JS_EMIT_JS;
+  if (strcmp(str, "none") == 0)
+    return JS_EMIT_NONE;
+  fprintf(stderr, "Unknown emit type %s\n", str);
+  return JS_EMIT_NONE;
 }

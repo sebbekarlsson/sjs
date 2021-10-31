@@ -7,4 +7,5 @@ list_T *path_split(char *path);
 char *path_dirname(char *path);
 char *path_join(list_T *paths);
 char *path_resolve(char *filepath, char *dirname);
+char *path_basename(char *path);
 #endif

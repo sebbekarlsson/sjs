@@ -1,6 +1,13 @@
+#include <js/args.h>
+#include <js/frontend/asm32/asm32.h>
+#include <js/frontend/frontend.h>
 #include <js/js.h>
+#include <js/js_path.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
+#include <sys/param.h>
 
 static int interactive() {
   char buff[1028];
@@ -23,10 +30,17 @@ int main(int argc, char *argv[]) {
   if (argc == 1)
     return interactive();
 
-  JSExecution execution = {1};
+  int pos = 0;
+  char **emit_arg = find_arg(argc, argv, &pos, "-e");
+
+  JSExecution execution = {emit_arg == 0 ? 1 : 0};
   js_execute_file(argv[1], &execution);
+
+  int result = 0;
+  if (emit_arg != 0)
+    result = emit(argv[1], argc - pos, emit_arg, &execution);
 
   js_execution_free(&execution);
 
-  return 0;
+  return result;
 }

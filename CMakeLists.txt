@@ -66,6 +66,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(hashmap_static)
 
+    FetchContent_Declare(
+    hdr
+    GIT_REPOSITORY /home/ianertson/workspace/hdr
+    )
+  FetchContent_MakeAvailable(hdr)
+
+
 
 generate_files()
 

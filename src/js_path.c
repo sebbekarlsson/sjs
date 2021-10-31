@@ -39,6 +39,20 @@ char *path_dirname(char *path) {
   return fullpath;
 }
 
+char *path_basename(char *path) {
+  char *suffix = path_dirname(path);
+  if (suffix == 0)
+    return path;
+
+  if (suffix == 0)
+    return path;
+  int sufflen = strlen(suffix);
+
+  free(suffix);
+
+  return &path[sufflen + 1];
+}
+
 char *path_join(list_T *paths) {
   if (paths == 0)
     return 0;

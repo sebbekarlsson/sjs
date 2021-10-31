@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -58,4 +59,20 @@ unsigned int js_is_regular_file(const char *filepath) {
   if (js_is_directory(filepath))
     return 0;
   return 1;
+}
+
+void js_write_file(const char *filepath, char *buffer) {
+  if (buffer == 0)
+    buffer = (char *)"";
+  FILE *fp = fopen(filepath, "w+");
+  if (fp == 0) {
+    fprintf(stderr, "Could not write to `%s`", filepath);
+    return;
+  }
+
+  uint32_t len = strlen(buffer);
+
+  fwrite(&buffer[0], MAX(0, len), sizeof(char), fp);
+
+  fclose(fp);
 }
