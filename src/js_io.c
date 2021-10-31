@@ -76,3 +76,28 @@ void js_write_file(const char *filepath, char *buffer) {
 
   fclose(fp);
 }
+
+char *js_sh(const char *cmd) {
+  char *output = (char *)calloc(1, sizeof(char));
+  output[0] = '\0';
+
+  FILE *fp;
+  char path[1035];
+
+  fp = popen(cmd, "r");
+
+  if (fp == NULL) {
+    printf("Failed to run command\n");
+    exit(1);
+  }
+
+  while (fgets(path, sizeof(path), fp) != NULL) {
+    output = (char *)realloc(output, (strlen(output) + strlen(path) + 1) *
+                                         sizeof(char));
+    strcat(output, path);
+  }
+
+  pclose(fp);
+
+  return output;
+}

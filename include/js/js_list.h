@@ -38,6 +38,8 @@ unsigned int ptr_in_list(list_T *list, void *ptr);
 
 int list_indexof_str(list_T *list, char *item);
 
+int list_indexof_ptr(list_T *list, void *ptr);
+
 unsigned int list_contains_str(list_T *list, char *item);
 
 list_T *list_filter(list_T *list, unsigned int (*filter_method)(void *item));
@@ -51,6 +53,11 @@ void *list_pop(list_T *list);
 void list_free_full(list_T *list, void (*free_method)(void *item));
 
 char *list_join(list_T *list, const char *delim);
+
+typedef char *(*ListMapStrFunc)(void *item, void *arg1, void *arg2, void *arg3);
+
+char *list_map_str(list_T *list, ListMapStrFunc func, void *arg1, void *arg2,
+                   void *arg3);
 
 void list_clear(list_T *list);
 

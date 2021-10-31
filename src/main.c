@@ -33,14 +33,12 @@ int main(int argc, char *argv[]) {
   int pos = 0;
   char **emit_arg = find_arg(argc, argv, &pos, "-e");
 
+  if (emit_arg != 0)
+    return emit(argv[1], argc - pos, emit_arg);
   JSExecution execution = {emit_arg == 0 ? 1 : 0};
   js_execute_file(argv[1], &execution);
 
-  int result = 0;
-  if (emit_arg != 0)
-    result = emit(argv[1], argc - pos, emit_arg, &execution);
-
   js_execution_free(&execution);
 
-  return result;
+  return 0;
 }

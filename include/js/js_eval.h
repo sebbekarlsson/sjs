@@ -68,4 +68,13 @@ JSAST *js_call_function(JSAST *self, JSAST *ast, JSFunction *fptr,
                         struct JS_EXECUTION_STRUCT *execution);
 
 void stack_pop(map_T *stack, const char *key);
+
+void js_export_symbol(char *name, JSAST *symbol, map_T *stack,
+                      struct JS_EXECUTION_STRUCT *execution);
+
+unsigned int js_is_dry(map_T *stack, struct JS_EXECUTION_STRUCT *execution);
+
+unsigned int js_is_true(JSAST *ast);
+
+unsigned int js_is_empty(JSAST *ast);
 #endif

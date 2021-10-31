@@ -8,7 +8,7 @@
 ## What is it?
 > It's a Javascript engine; currently just an interpreter but there are more features to come, including:
 * compile to C
-* compile to 32bit assembly
+* compile to 32bit assembly (in progress)
 * compile to 64bit assembly
 * bundle for web
 * JSX support
@@ -35,6 +35,36 @@
 
 ----------------------
 
+## Using it
+### Interpreter
+> Using the interpreter is simple:
+``` bash
+sjs <input_file>.js
+```
+### Compiler
+> When using `sjs` to compile, you need to specify the emit output.  
+> The available emit outputs are:
+
+* asm32 (_in progress_)
+* asm64 (_not implemented_)
+* C99 (_not implemented_)
+* js (_not implemented_)
+
+> The command you would run to compile a Javascript file to 32 bit assembly would look like this:
+
+``` bash
+sjs <input_file>.js -e asm32
+```
+
+> This will produce a bunch of files:
+* <input_file>.js.s (_Assembly instructions_)
+* <input_file>.js.o (_Object file (From the linker)_)
+* <input_file>.js.out (_The actual executable_)
+
+> Replace `-e asm32` with whatever emit output you want.  
+
+----------------------
+
 ## Building it
 ### Build dependencies
 > To build `sjs` you will need:
@@ -49,7 +79,7 @@ mkdir -p build && cd build && cmake .. && make
 
 ## TODO
 - [ ] compile to C
-- [ ] compile to 32bit assembly
+- [ ] compile to 32bit assembly (in progress)
 - [ ] compile to 64bit assembly
 - [ ] bundle for web
 - [ ] JSX support

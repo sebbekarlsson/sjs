@@ -132,6 +132,18 @@ int list_indexof_str(list_T *list, char *item) {
   return -1;
 }
 
+int list_indexof_ptr(list_T *list, void *ptr) {
+  for (unsigned int i = 0; i < list->size; i++) {
+    if (!list->items[i])
+      continue;
+
+    if (list->items[i] == ptr)
+      return i;
+  }
+
+  return -1;
+}
+
 unsigned int list_contains_str(list_T *list, char *item) {
   for (unsigned int i = 0; i < list->size; i++) {
     if (!list->items[i])
@@ -265,7 +277,32 @@ char *list_join(list_T *list, const char *delim) {
     js_str_append(&str, value);
 
     if (i < list->size - 1) {
-      js_str_append(&str, delim);
+      js_str_append(&str, (char *)delim);
+    }
+  }
+
+  return str;
+}
+
+char *list_map_str(list_T *list, ListMapStrFunc func, void *arg1, void *arg2,
+                   void *arg3) {
+  if (list == 0)
+    return 0;
+  if (list->size == 0 || list->items == 0)
+    return 0;
+
+  char *str = 0;
+
+  for (size_t i = 0; i < list->size; i++) {
+    void *value = list->items[i];
+    if (value == 0)
+      continue;
+
+    char *s = func(value, arg1, arg2, arg3);
+
+    if (s != 0) {
+      js_str_append(&str, s);
+      free(s);
     }
   }
 

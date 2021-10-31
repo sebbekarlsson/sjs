@@ -23,24 +23,24 @@ char *js_dirname(map_T *stack) {
   return strdup(*stringast->value_str_ptr);
 }
 
-static void export_symbol(char *name, JSAST *symbol, map_T *stack,
-                          JSExecution *execution) {
+void js_export_symbol(char *name, JSAST *symbol, map_T *stack,
+                      JSExecution *execution) {
   JSAST *module = (JSAST *)map_get_value(stack, "module");
   JSAST *exports = (JSAST *)map_get_value(module->keyvalue, "exports");
   map_set(exports->keyvalue, name, symbol);
 }
 
-static unsigned int is_dry(map_T *stack, JSExecution *execution) {
+unsigned int js_is_dry(map_T *stack, JSExecution *execution) {
   if (execution == 0)
     return 0;
   return execution->dry;
 }
 
-static unsigned int is_true(JSAST *ast) {
+unsigned int js_is_true(JSAST *ast) {
   return ((ast->is_true) || ast->value_int);
 }
 
-static unsigned int is_empty(JSAST *ast) {
+unsigned int js_is_empty(JSAST *ast) {
   return ((ast->value_int <= 0 && ast->value_num <= 0 && ast->value_str == 0) ||
           ast->value_str != 0 && strlen(ast->value_str) == 0);
 }
@@ -348,9 +348,9 @@ JSAST *js_eval_function(JSAST *ast, map_T *stack, JSExecution *execution) {
       ast->args->items[i] = js_eval(ast->args->items[i], stack, execution);
     }*/
 
-  export_symbol(ast->value_str, ast, stack, execution);
+  js_export_symbol(ast->value_str, ast, stack, execution);
 
-  if (is_dry(stack, execution) == 0) {
+  if (js_is_dry(stack, execution) == 0) {
     map_set(stack, ast->value_str, ast);
   }
 
@@ -418,7 +418,7 @@ JSAST *js_eval_if(JSAST *ast, map_T *stack, JSExecution *execution) {
     is_expr_true = 1;
   } else {
     JSAST *expr = js_eval(ast->expr, stack, execution);
-    is_expr_true = is_true(expr);
+    is_expr_true = js_is_true(expr);
   }
 
   if (is_expr_true && ast->body) {
@@ -431,7 +431,7 @@ JSAST *js_eval_if(JSAST *ast, map_T *stack, JSExecution *execution) {
 }
 
 JSAST *js_eval_while(JSAST *ast, map_T *stack, JSExecution *execution) {
-  while (is_true(js_eval(ast->expr, stack, execution)) && ast->body != 0,
+  while (js_is_true(js_eval(ast->expr, stack, execution)) && ast->body != 0,
          execution) {
     js_eval(ast->body, stack, execution);
   }
@@ -445,7 +445,7 @@ JSAST *js_eval_for(JSAST *ast, map_T *stack, JSExecution *execution) {
   JSAST *statement3 = ast->args->size > 2 ? (JSAST *)ast->args->items[2] : 0;
 
   for (js_maybe_eval(statement1, stack, execution);
-       is_true(js_maybe_eval(statement2, stack, execution));
+       js_is_true(js_maybe_eval(statement2, stack, execution));
        js_maybe_eval(statement3, stack, execution)) {
     js_eval(ast->body, stack, execution);
   }
@@ -584,9 +584,9 @@ JSAST *js_eval_or(JSAST *ast, map_T *stack, JSExecution *execution) {
   JSAST *left = js_eval(ast->left, stack, execution);
   JSAST *right = js_eval(ast->right, stack, execution);
 
-  if (!is_empty(left))
+  if (!js_is_empty(left))
     return left;
-  if (!is_empty(right))
+  if (!js_is_empty(right))
     return right;
   return left;
 }
