@@ -84,10 +84,11 @@ def run_js(filename, func):
     return dict(cmd=joined_cmd, time=diff, filename=filename, date=datetime.datetime.now(), code=code)
 
 
+import glob
 
-MARKS = {
-    'string_map.js': [sjs_run, node_run]
-}
+ALL_FILES = list(map(lambda x: os.path.basename(x), glob.glob(os.path.join(DIRNAME, 'sourcefiles', '*.js'))))
+
+MARKS = reduce(lambda a, b: {**a, b: [sjs_run, node_run]}, ALL_FILES, dict())
 
 def main():
     download_node(NODE_VERSION)
