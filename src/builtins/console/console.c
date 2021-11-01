@@ -2,8 +2,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
-static void *builtin_console_log(void *ptr, list_T *args, map_T *stack,
-                                 JSExecution *execution) {
+void *builtin_console_log(void *ptr, list_T *args, map_T *stack,
+                          JSExecution *execution) {
   for (uint32_t i = 0; i < args->size; i++) {
     JSAST *arg = (JSAST *)args->items[i];
     char *str = js_ast_to_string(arg);

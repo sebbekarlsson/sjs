@@ -9,6 +9,7 @@ struct JS_EXECUTION_STRUCT;
 #define STACK_ADDR_CONSTRUCT_CALLER "___NEW_CALLER___"
 #define STACK_ADDR_THIS "this"
 #define STACK_ADDR_EXCEPTION "___EXCEPTION___"
+#define STACK_ADDR_FUNCTION "___FUNCTION___"
 
 JSAST *js_eval(JSAST *ast, map_T *stack, struct JS_EXECUTION_STRUCT *execution);
 JSAST *js_maybe_eval(JSAST *ast, map_T *stack,
@@ -77,4 +78,6 @@ unsigned int js_is_dry(map_T *stack, struct JS_EXECUTION_STRUCT *execution);
 unsigned int js_is_true(JSAST *ast);
 
 unsigned int js_is_empty(JSAST *ast);
+
+JSAST *js_eval_set_current_function(map_T *stack, JSAST *f);
 #endif

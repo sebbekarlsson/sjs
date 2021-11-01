@@ -317,3 +317,27 @@ void list_concat(list_T *list1, list_T *list2) {
     list_push(list1, list2->items[i]);
   }
 }
+
+list_T *str_to_hex_chunks(const char *instr) {
+  list_T *list = init_list(sizeof(char *));
+
+  unsigned int i = 0;
+  char *tmp = calloc(1, sizeof(char));
+  unsigned int len = strlen(instr);
+  while (instr[i] != '\0') {
+    tmp = realloc(tmp, (strlen(tmp) + 2) * sizeof(char));
+    strcat(tmp, (char[]){instr[i], 0});
+
+    if (((i > 0 && (strlen(tmp) % 4 == 0)) || i >= len - 1) ||
+        instr[i] == '\n' || instr[i] == '\t') {
+      char *hexstr = str_to_hex(tmp);
+      free(tmp);
+      list_push(list, hexstr);
+      tmp = calloc(1, sizeof(char));
+    }
+
+    i += 1;
+  }
+
+  return list;
+}

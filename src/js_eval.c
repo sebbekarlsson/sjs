@@ -301,8 +301,11 @@ JSAST *js_eval_call(JSAST *ast, map_T *stack, JSExecution *execution) {
     res = js_call_function(self, 0, left->fptr, ast->args, left->args, stack,
                            execution);
   } else if (left->type == JS_AST_FUNCTION) {
+    JSAST *prev = js_eval_set_current_function(stack, ast->left);
     res = js_call_function(self, left, 0, ast->args, left->args, stack,
                            execution);
+
+    js_eval_set_current_function(stack, prev);
   }
 
   res = res ? res : init_js_ast_result(JS_AST_UNDEFINED);
@@ -341,12 +344,12 @@ JSAST *js_eval_function(JSAST *ast, map_T *stack, JSExecution *execution) {
       map_bucket_T* b = map_get(stack, arg->value_str);
 
       if (b == 0) {
-        map_set(stack, arg->value_str, init_js_ast_result(JS_AST_UNDEFINED));
+      map_set(stack, arg->value_str, init_js_ast_result(JS_AST_UNDEFINED));
       }
-    }
-    for (uint32_t i = 0; i < ast->args->size; i++) {
+      }
+      for (uint32_t i = 0; i < ast->args->size; i++) {
       ast->args->items[i] = js_eval(ast->args->items[i], stack, execution);
-    }*/
+      }*/
 
   js_export_symbol(ast->value_str, ast, stack, execution);
 
@@ -848,4 +851,13 @@ JSAST *js_eval_id(JSAST *ast, map_T *stack, JSExecution *execution) {
   }
 
   return js_eval(value, stack, execution);
+}
+
+JSAST *js_eval_set_current_function(map_T *stack, JSAST *f) {
+  if (f == 0)
+    return 0;
+  JSAST *prev = (JSAST *)map_get_value(stack, STACK_ADDR_FUNCTION);
+  map_unset(stack, STACK_ADDR_FUNCTION);
+  map_set(stack, STACK_ADDR_FUNCTION, f);
+  return prev;
 }

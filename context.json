@@ -649,6 +649,11 @@
             "name": "parseInt",
             "ptr": "builtin_function_parse_int",
             "args": ["string", "radix"]
+        },
+        {
+            "name": "print",
+            "ptr": "builtin_console_log",
+            "args": ["value"]
         }
     ],
     "process_builtins": [

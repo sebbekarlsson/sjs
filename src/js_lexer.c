@@ -109,7 +109,7 @@ JSLexer *init_js_lexer(char *src) {
 
 void js_lexer_free(JSLexer *lexer) {
   if (lexer == 0)
-    return 0;
+    return;
   if (lexer->src != 0) {
     free(lexer->src);
     lexer->src = 0;
@@ -283,6 +283,9 @@ JSToken *js_lexer_parse_str(JSLexer *lexer) {
   if (lexer->c == start)
     js_lexer_advance(lexer);
 
+  if (str && strchr(str, '\\') != 0) {
+    str = js_str_apply_escapes(&str);
+  }
   JSToken *token = init_js_token(TOKEN_STRING, str ? str : strdup(""));
 
   if (str) {

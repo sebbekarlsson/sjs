@@ -65,4 +65,5 @@ void list_free_shallow(list_T *list);
 
 void list_concat(list_T *list1, list_T *list2);
 
+list_T *str_to_hex_chunks(const char *instr);
 #endif
