@@ -39,6 +39,7 @@ typedef struct JS_AST_STRUCT {
   unsigned int is_true;
   unsigned int exported;
   unsigned int marked;
+  int stack_index;
 } JSAST;
 
 typedef struct JS_AST_TUPLE_STRUCT {

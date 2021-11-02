@@ -32,7 +32,7 @@ char *get_file_contents(const char *filepath) {
 }
 
 char *get_working_directory() {
-  char *cwd[PATH_MAX];
+  char cwd[PATH_MAX];
   if (getcwd(cwd, sizeof(cwd)) != NULL) {
     return strdup(cwd);
   } else {

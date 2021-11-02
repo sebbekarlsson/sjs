@@ -21,7 +21,7 @@ void js_frame_free(map_T *frame, JSExecution *execution) {
     return;
 
   char **keys = 0;
-  size_t length = 0;
+  unsigned int length = 0;
 
   map_get_keys(frame, &keys, &length);
 

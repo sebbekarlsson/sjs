@@ -49,7 +49,7 @@ JSParser *init_js_parser(JSLexer *lexer, JSExecution *execution) {
 
 void js_parser_free(JSParser *parser) {
   if (parser == 0)
-    return 0;
+    return;
   if (parser->token != 0) {
     js_token_free(parser->token);
     parser->token = 0;
@@ -197,7 +197,7 @@ JSAST *js_parser_parse_import(JSParser *parser) {
   if (parser->token->type == TOKEN_LBRACE) {
     ast->left = js_parser_parse_object(parser);
   } else if (parser->token->type != TOKEN_STRING) {
-    js_parser_parse_multiple(ast->args, parser, TOKEN_COMMA);
+    js_parser_parse_multiple(parser, ast->args, TOKEN_COMMA);
   }
 
   if (parser->token->type == TOKEN_FROM) {

@@ -1,5 +1,9 @@
 function main() {
-  print("hello world john doe\n");
+  const k = 33;
+  const x = "hello world\n";
+  const y = "tjena\n";
+
+  print(y);
 
   return 0;
 }

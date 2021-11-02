@@ -54,10 +54,11 @@ void list_free_full(list_T *list, void (*free_method)(void *item));
 
 char *list_join(list_T *list, const char *delim);
 
-typedef char *(*ListMapStrFunc)(void *item, void *arg1, void *arg2, void *arg3);
+typedef char *(*ListMapStrFunc)(void *item, void *arg1, void *arg2, void *arg3,
+                                void *arg4);
 
 char *list_map_str(list_T *list, ListMapStrFunc func, void *arg1, void *arg2,
-                   void *arg3);
+                   void *arg3, void *arg4);
 
 void list_clear(list_T *list);
 

@@ -1,5 +1,6 @@
 #include <js/js_gc.h>
 #include <js/macros.h>
+#include <stdio.h>
 
 JSGC *init_js_gc() {
   JSGC *gc = NEW(JSGC);

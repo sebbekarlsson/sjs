@@ -285,7 +285,7 @@ char *list_join(list_T *list, const char *delim) {
 }
 
 char *list_map_str(list_T *list, ListMapStrFunc func, void *arg1, void *arg2,
-                   void *arg3) {
+                   void *arg3, void *arg4) {
   if (list == 0)
     return 0;
   if (list->size == 0 || list->items == 0)
@@ -298,7 +298,7 @@ char *list_map_str(list_T *list, ListMapStrFunc func, void *arg1, void *arg2,
     if (value == 0)
       continue;
 
-    char *s = func(value, arg1, arg2, arg3);
+    char *s = func(value, arg1, arg2, arg3, arg4);
 
     if (s != 0) {
       js_str_append(&str, s);

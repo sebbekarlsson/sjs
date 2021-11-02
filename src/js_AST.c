@@ -74,10 +74,10 @@ static map_T *js_copy_ast_map(map_T *src) {
   map_T *copy = NEW_MAP();
 
   char **keys = 0;
-  size_t length = 0;
+  unsigned int length = 0;
   map_get_keys(src, &keys, &length);
 
-  for (size_t i = 0; i < length; i++) {
+  for (unsigned int i = 0; i < length; i++) {
     char *key = keys[i];
     if (key == 0)
       continue;

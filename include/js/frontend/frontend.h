@@ -13,18 +13,18 @@ static int emit_asm32(char* input_file) {
 
   if (buffer == 0) return 0;
 
-  char buff[PATH_MAX];
+  char buff[PATH_MAX*2];
   sprintf(buff, "%s.s", basename);
   js_write_file(buff, buffer);
   printf("wrote to %s\n", buff);
 
 
-  char as_cmd[PATH_MAX];
+  char as_cmd[PATH_MAX*2];
   sprintf(as_cmd, "as --32 %s -o %s.o", buff, basename);
   printf("%s\n", as_cmd);
   js_sh(as_cmd);
 
-  char ld_cmd[PATH_MAX];
+  char ld_cmd[PATH_MAX*2];
   sprintf(ld_cmd, "ld %s.o -o %s.out -m elf_i386", basename, basename);
   printf("%s\n", ld_cmd);
   js_sh(ld_cmd);

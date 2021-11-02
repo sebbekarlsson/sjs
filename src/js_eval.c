@@ -42,7 +42,7 @@ unsigned int js_is_true(JSAST *ast) {
 
 unsigned int js_is_empty(JSAST *ast) {
   return ((ast->value_int <= 0 && ast->value_num <= 0 && ast->value_str == 0) ||
-          ast->value_str != 0 && strlen(ast->value_str) == 0);
+          (ast->value_str != 0 && strlen(ast->value_str) == 0));
 }
 
 void stack_pop(map_T *stack, const char *key) {
@@ -514,7 +514,9 @@ JSAST *js_eval_try(JSAST *ast, map_T *stack, JSExecution *execution) {
 
   return body;
 }
-JSAST *js_eval_catch(JSAST *ast, map_T *stack, JSExecution *execution) {}
+JSAST *js_eval_catch(JSAST *ast, map_T *stack, JSExecution *execution) {
+  return ast;
+}
 
 JSAST *js_eval_definition(JSAST *ast, map_T *stack, JSExecution *execution) {
   if (ast->right && ast->right->type == JS_AST_FUNCTION) {

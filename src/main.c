@@ -1,11 +1,13 @@
 #include <js/args.h>
 #include <js/frontend/asm32/asm32.h>
 #include <js/frontend/frontend.h>
+#include <js/frontend/instruction.h>
 #include <js/js.h>
 #include <js/js_path.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
 

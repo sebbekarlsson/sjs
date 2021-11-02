@@ -1,2 +1,2 @@
 # assign
-movl %%esp, -%d(%%ebp)
+movl %%esp, %d(%%ebp)

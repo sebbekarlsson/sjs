@@ -18,34 +18,9 @@
 
 #define MAX_NUM_LEN 128
 
-#define PUSH(c, ast)                               \
-  { list_push(stacklist, ast); c = list_indexof_ptr(stacklist, ast); }
-
 #define EMIT(name, ast)                         \
-  js_f_asm32_##name(ast, stack, stacklist, execution)
+  js_f_asm32_##name(ast, stack, stacklist, execution, im)
 
-#define STACK_ALLOC(str, n)                          \
-  { const char* template = "subl $%d, %%esp\n"; char buff[512]; sprintf(buff, template, (int)n); js_str_append(&str, buff); }
-
-#define MOVL(str, value, location)              \
-  { const char* template = "movl $0x%s, %d(%%esp)\n"; char buff[512]; sprintf(buff, template, value, (int)location); js_str_append(&str, buff); }
-
-#define PUSHL_STACK_ADDR(str, location)              \
-  { const char* template = "pushl %d(%%esp)\n"; char buff[512]; sprintf(buff, template, (int)location); js_str_append(&str, buff); }
-
-#define PUSHL_STACK_TOP(str)                    \
-  { js_str_append(&str, "pushl %esp"); }
-
-
-#define LEAL(str, n, src, dest, sz)              \
-  { const char* template = "movl $%d, %%edi\nleal (%s, %%edi, %d), %s\n"; char buff[1024]; sprintf(buff, template, (int)n, src, sz, dest); js_str_append(&str, buff); }
-
-static char* get_reset_str(int len) {
-  const char* template = reset_s;
-  char* str = (char*)calloc(reset_s_len + MAX_NUM_LEN, sizeof(char));
-  sprintf(str, template, len);
-  return str;
-}
 
 char* js_f_asm32_entry(const char* filename) {
   char* str = (char*)strdup(bootstrap_s);
@@ -56,8 +31,11 @@ char* js_f_asm32_entry(const char* filename) {
   JSAST* ast = execution.root;
 
   list_T* stacklist = init_list(sizeof(JSAST*));
+  IM* im = init_js_instruction_machine();
 
-  char* nextstr = js_f_asm32(ast, execution.frame, stacklist, &execution);
+  char* nextstr = js_f_asm32(ast, execution.frame, stacklist, &execution, im);
+
+  nextstr = js_im_dump(im);
 
   if (nextstr != 0) {
     js_str_append(&str, nextstr);
@@ -70,12 +48,15 @@ char* js_f_asm32_entry(const char* filename) {
 
 
 
-char* js_f_asm32_compound(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution) {
-  return list_map_str(ast->children, js_f_asm32, stack, stacklist, execution);
+char* js_f_asm32_compound(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution, IM* im) {
+  return list_map_str(ast->children, js_f_asm32, stack, stacklist, execution, im);
 }
 
-char* js_f_asm32_function(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution) {
+char* js_f_asm32_function(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution, IM* im) {
+  char* str = 0;
   JSAST* prev = js_eval_set_current_function(stack, ast);
+
+  unsigned int is_main = 0;
   char* name = js_ast_str_value(ast);
 
   // rewrite "main" to "_start"
@@ -86,103 +67,118 @@ char* js_f_asm32_function(JSAST* ast, map_T* stack, list_T* stacklist, JSExecuti
     name = js_ast_str_value(copy);
     ast = copy;
     map_set(stack, "main", copy);
+    is_main = 1;
   }
+
+  js_im_execute(im, (JSInstruction){ INST_FUNCTION, 0, name });
 
   execution->dry = 0;
   ast = js_eval(ast, stack, execution);
   execution->dry = 1;
-  const char* template = function_begin_s;
-  char* bodystr = ast->body ? js_f_asm32(ast->body, stack, stacklist, execution) : 0;
+  js_eval_set_current_function(stack, prev);
+  char* bodystr = ast->body ? js_f_asm32(ast->body, stack, stacklist, execution, im) : 0;
 
-  char* str = (char*)calloc((function_begin_s_len + strlen(name) * 5) + 1, sizeof(char));
-  sprintf(str, template, name);
-  if (bodystr) {
-    js_str_append(&str, bodystr);
+  if (is_main) {
+    js_im_execute(im, (JSInstruction){ INST_MOVL, 1, 0, (JSRegister){ 0, R_32_G1 } });
+    js_im_execute(im, (JSInstruction){ INST_MOVL_REG, 0, 0, (JSRegister){ 0, R_32_G1 }, (JSRegister){ 0, R_32_G2 } });
+    js_im_execute(im, (JSInstruction){ INST_INT, 0x80, 0 });
   }
 
-  js_str_append(&str, program_return_s);
-  js_eval_set_current_function(stack, prev);
-
   return str;
 }
 
-char* js_f_asm32_call(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution) {
+char* js_f_asm32_call(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution, IM* im) {
   JSAST* left = js_eval(ast->left, stack, execution);
+  char* value = js_ast_str_value(left);
 
-  char* args_str = OR(list_map_str(ast->args, js_f_asm32, stack, stacklist, execution), strdup(""));
-  const char* template = call_s;
-  char* resetstr = get_reset_str(ast->args->size);
-  char* func_name = js_ast_str_value(left);
-  char* str = (char*)calloc(call_s_len + strlen(args_str) + 1 + strlen(resetstr) + 1  + strlen(func_name) + 1, sizeof(char));
-  sprintf(str, template, args_str, func_name, resetstr);
+      list_T *evaluated_args = init_list(sizeof(JSAST *));
 
-  free(args_str);
-  free(resetstr);
-  return str;
-}
+  list_T* call_args = ast->args;
+  for (uint32_t i = 0; i < call_args->size; i++) {
+    //JSAST *farg = (JSAST *)expected_args->items[i];
+    JSAST *carg = (JSAST *)call_args->items[i];
+    js_eval(carg, stack, execution);
 
-char* js_f_asm32_number(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution) {
-  const char* template = int_s;
-  char* str = (char*)calloc(int_s_len + (MAX_NUM_LEN * 3), sizeof(char));
-  int c = 0;
-  PUSH(c, ast);
-  sprintf(str, template, ast->value_int, ast->value_int, c);
-  return str;
-}
+    list_push(stacklist, carg);
+    carg->stack_index = (int)stacklist->size;
+    list_push(evaluated_args, carg);
+    //map_set(stack, farg->value_str, evaluated);
+  }
 
-char* js_f_asm32_string(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution) {
+  char* args_str = list_map_str(evaluated_args, js_f_asm32, stack, stacklist, execution, im);
+
+  js_im_execute(im, (JSInstruction){ INST_CALL, 0, value });
   char* str = 0;
-  int c = 0;
-  PUSH(c, ast);
+  return str;
+}
+
+char* js_f_asm32_number(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution, IM* im) {
+  char* str = 0;
+  ast = js_eval(ast, stack, execution);
+  int v = ast->value_int ? ast->value_int : (int)ast->value_num;
+  list_push(stacklist, ast);
+  int c = (int)stacklist->size;
+  ast->stack_index = c;
+  js_im_execute(im, (JSInstruction){ INST_SUBL, 4, 0, (JSRegister){ 0, R_32_SP } });
+  js_im_execute(im, (JSInstruction){ INST_PUSHL, v, 0 });
+  js_im_execute(im, (JSInstruction){ INST_MOVB, 0, 0, (JSRegister){ 0, R_32_SP }, (JSRegister){ 0, R_32_DR_6 } });
+  js_im_execute(im, (JSInstruction){ INST_MOVL, v, 0, (JSRegister){ -(c*4), R_32_BP } });
+  return str;
+}
+
+char* js_f_asm32_string(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution, IM* im) {
+  char* str = 0;
+
+  int c = (int)stacklist->size;
+
   char* value = js_ast_str_value(ast);
+
+
+  char valuebuff[512];
+  sprintf(valuebuff, "# %s\n", value);
+  js_str_append(&str, valuebuff);
+
   list_T* chunks = str_to_hex_chunks(value);
   int bytes_needed = (chunks->size * 4) + 4; // 4 * 4
-  STACK_ALLOC(str, bytes_needed);
+  js_im_execute(im, (JSInstruction){ INST_SUBL, bytes_needed, 0, (JSRegister){ 0, R_32_SP } });
   char* hexstr = str_to_hex(value);
 
-  int start = -bytes_needed;
+  int start = -((c*4) + bytes_needed);
 
   for (size_t i = 0; i < chunks->size; i++) {
     char* hexpart = (char*)chunks->items[i];
-    MOVL(str, hexpart, start); // put string at start of memory block
+     js_im_execute(im, (JSInstruction){ INST_MOVL, 0, hexpart, (JSRegister){ start, R_32_BP } });
     start += 4;
+    list_push(stacklist, ast);
   }
 
+  ast->stack_index = c+((bytes_needed+4)/4);
+  list_push(stacklist, ast);
+  js_im_execute(im, (JSInstruction){ INST_MOVL, 0, 0, (JSRegister){ start, R_32_BP } });
 
-  MOVL(str, "0", start); // terminate string
-
-  LEAL(str, -bytes_needed, "%esp", "%esp", 1);
-  //PUSHL_STACK_ADDR(str, -bytes_needed); // push pointer to start of string
-  PUSHL_STACK_TOP(str);
-
+  js_im_execute(im, (JSInstruction){ INST_PUSHL_REG, 0, 0, (JSRegister){ 0, R_32_SP } });
 
   return str;
 }
 
-char* js_f_asm32_definition(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution) {
+char* js_f_asm32_definition(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution, IM* im) {
+  char* str = 0;
+
+  js_eval(ast, stack, execution);
   JSAST* right = js_eval(ast->right, stack, execution);
+  js_f_asm32(right,  stack, stacklist, execution, im);
+  list_push(stacklist, ast);
   int c = stacklist->size;
 
-  char* rightstr = js_f_asm32(right, stack, stacklist, execution);
-  const char* template = assign_s;
-  char* str = 0;
-  char* str2 = (char*)calloc(assign_s_len + strlen(rightstr) + 1, sizeof(char));
-  sprintf(str2, template, c);
 
-  js_str_append(&str, rightstr);
-  js_str_append(&str, str2);
+  js_im_execute(im, (JSInstruction){ INST_POPL, 0, 0, (JSRegister){ -(c*4), R_32_BP } });
+  js_im_execute(im, (JSInstruction){ INST_SUBL, 4, 0, (JSRegister){ 0, R_32_SP } });
 
   return str;
 }
 
-char* js_f_asm32_ret(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution) {
-  char* str = 0;
-  char* rightstr = ast->right != 0 ? js_f_asm32(ast->right, stack, stacklist, execution) : 0;
-
-  if (rightstr) {
-    js_str_append(&str, rightstr);
-    free(rightstr);
-  }
+char* js_f_asm32_ret(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution, IM* im) {
+  char* rightstr = ast->right != 0 ? js_f_asm32(ast->right, stack, stacklist, execution, im) : 0;
 
   JSAST* current_function = (JSAST*)map_get_value(stack, STACK_ADDR_FUNCTION);
   char* func_name = js_ast_str_value(current_function);
@@ -195,17 +191,24 @@ char* js_f_asm32_ret(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* e
   }
 
   if (should_return) {
-    js_str_append(&str, return_s);
+    js_im_execute(im, (JSInstruction){ INST_RET, 0, 0 });
   }
+  return 0;
+}
 
+char* js_f_asm32_id(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution, IM* im) {
+  JSAST* id = js_eval(ast, stack, execution);
+  js_im_execute(im, (JSInstruction){ INST_PUSHL_REG, 0, 0, (JSRegister){ -(id->stack_index*4), R_32_BP } });
+  char* str = 0;
   return str;
 }
 
-char* js_f_asm32(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution) {
+char* js_f_asm32(JSAST* ast, map_T* stack, list_T* stacklist, struct JS_EXECUTION_STRUCT* execution, IM* im) {
   switch (ast->type) {
     case JS_AST_COMPOUND: return EMIT(compound, ast); break;
     case JS_AST_CALL: return EMIT(call, ast); break;
     case JS_AST_FUNCTION: return EMIT(function, ast); break;
+    case JS_AST_ID: return EMIT(id, ast); break;
     case JS_AST_STRING: return EMIT(string, ast); break;
     case JS_AST_NUMBER: return EMIT(number, ast); break;
     case JS_AST_DEFINITION: return EMIT(definition, ast); break;
