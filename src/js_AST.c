@@ -387,7 +387,9 @@ char *js_ast_to_string(JSAST *ast) {
   case JS_AST_BINOP:
     return js_ast_binop_to_string(ast);
     break;
-  default: { return js_ast_str_value(ast); }
+  default: {
+    return js_ast_str_value(ast);
+  }
   }
 
   return js_ast_str_value(ast);
@@ -569,4 +571,65 @@ void js_ast_set_float(JSAST *ast, float value) {
     return;
   ast->value_num = value;
   ast->value_int = (int)value;
+}
+
+void js_ast_set_double(JSAST *ast, double value) {
+  if (ast == 0)
+    return;
+  ast->value_num = (float)value;
+  ast->value_int = (int)value;
+  ast->value_double = value;
+}
+
+JSAST *js_ast_query(JSAST *ast, JSASTType type) {
+  if (ast->type == type)
+    return ast;
+  if (ast->left) {
+    JSAST *result = js_ast_query(ast->left, type);
+    if (result)
+      return result;
+  }
+  if (ast->right) {
+    JSAST *result = js_ast_query(ast->right, type);
+    if (result)
+      return result;
+  }
+
+  if (ast->body) {
+    JSAST *result = js_ast_query(ast->body, type);
+    if (result)
+      return result;
+  }
+
+  if (ast->expr) {
+    JSAST *result = js_ast_query(ast->expr, type);
+    if (result)
+      return result;
+  }
+
+  if (ast->children) {
+    list_T *l = ast->children;
+    for (uint32_t i = 0; i < l->size; i++) {
+      JSAST *child = (JSAST *)l->items[i];
+      if (!child)
+        continue;
+      JSAST *result = js_ast_query(child, type);
+      if (result)
+        return result;
+    }
+  }
+
+  if (ast->args) {
+    list_T *l = ast->args;
+    for (uint32_t i = 0; i < l->size; i++) {
+      JSAST *child = (JSAST *)l->items[i];
+      if (!child)
+        continue;
+      JSAST *result = js_ast_query(child, type);
+      if (result)
+        return result;
+    }
+  }
+
+  return 0;
 }

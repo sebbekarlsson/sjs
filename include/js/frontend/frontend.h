@@ -4,8 +4,10 @@
 #include <js/js_path.h>
 #include <js/js_io.h>
 #include <js/frontend/asm32/asm32.h>
+#include <js/frontend/js/js.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 static int emit_asm32(char* input_file) {
   char* basename = path_basename(input_file);
@@ -32,11 +34,27 @@ static int emit_asm32(char* input_file) {
   return 0;
 }
 
+static int emit_js(char* input_file) {
+  char* basename = path_basename(input_file);
+  char* buffer = js_f_js_entry(input_file);
+
+  if (buffer == 0) return 0;
+
+  char buff[PATH_MAX];
+  sprintf(buff, "%s.out.s", basename);
+  js_write_file(buff, buffer);
+  printf("wrote to %s\n", buff);
+
+
+  free(buffer);
+}
+
 static int emit(char* input_file, int argc, char* argv[]) {
   if (argc < 2) return 1;
   JSEmitType emit_type = js_string_to_emit_type(argv[0]);
   switch (emit_type) {
     case JS_EMIT_ASM32: return emit_asm32(input_file); break;
+    case JS_EMIT_JS: return emit_js(input_file); break;
     default: {
       printf("Unknown emit type %d\n", emit_type);
       return 1;

@@ -2,6 +2,7 @@
 #include <js/js.h>
 #include <js/js_eval.h>
 #include <js/js_path.h>
+#include <js/macros.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -77,11 +78,12 @@ JSAST *js_eval_string_concat(JSAST *left, JSAST *right) {
     JSAST *right = js_eval(ast->right, stack, execution);                      \
     if (left->type == JS_AST_STRING || right->type == JS_AST_STRING)           \
       return js_eval_string_concat(left, right);                               \
-    float x = left->value_num;                                                 \
-    float y = right->value_num;                                                \
+    double x = OR(left->value_double, left->value_num);                        \
+    double y = OR(right->value_double, right->value_num);                      \
     JSAST *name = init_js_ast_result(JS_AST_NUMBER);                           \
     MARK(name);                                                                \
     name->value_num = x op y;                                                  \
+    name->value_double = x op y;                                               \
     name->value_int = (int)name->value_num;                                    \
     return name;                                                               \
   }
@@ -89,13 +91,15 @@ JSAST *js_eval_string_concat(JSAST *left, JSAST *right) {
 #define MATH_OP_F_1(name, ast, op, y, stack)                                   \
   {                                                                            \
     JSAST *left = js_eval(ast, stack, execution);                              \
-    float x = left->value_num;                                                 \
+    double x = OR(left->value_double, left->value_num);                        \
     JSAST *name = init_js_ast_result(JS_AST_NUMBER);                           \
     MARK(name);                                                                \
     name->value_num = x op y;                                                  \
+    name->value_double = x op y;                                               \
     name->value_int = (int)name->value_num;                                    \
     left->value_num = name->value_num;                                         \
     left->value_int = name->value_int;                                         \
+    left->value_double = name->value_double;                                   \
     return name;                                                               \
   }
 
@@ -107,7 +111,9 @@ JSAST *js_eval_string_concat(JSAST *left, JSAST *right) {
     MARK(name);                                                                \
     name->value_int = op x;                                                    \
     name->value_num = (float)ceil(name->value_int);                            \
+    name->value_double = (double)ceil(name->value_int);                        \
     left->value_num = name->value_num;                                         \
+    left->value_double = (double)name->value_num;                              \
     left->value_int = name->value_int;                                         \
     return name;                                                               \
   }
@@ -122,6 +128,7 @@ JSAST *js_eval_string_concat(JSAST *left, JSAST *right) {
     MARK(name);                                                                \
     name->value_int = x op y;                                                  \
     name->value_num = (float)name->value_int;                                  \
+    name->value_double = (double)name->value_int;                              \
     return name;                                                               \
   }
 
@@ -168,7 +175,11 @@ JSAST *js_eval(JSAST *ast, map_T *stack, JSExecution *execution) {
     R = js_eval_definition(ast, stack, execution);
     break;
   case JS_AST_FUNCTION:
+  case JS_AST_ARROW_FUNCTION:
     R = js_eval_function(ast, stack, execution);
+    break;
+  case JS_AST_CLASS:
+    R = js_eval_class(ast, stack, execution);
     break;
   case JS_AST_BINOP:
     R = js_eval_binop(ast, stack, execution);
@@ -190,7 +201,9 @@ JSAST *js_eval(JSAST *ast, map_T *stack, JSExecution *execution) {
   case JS_AST_PROPERTY_ACCESS:
     R = js_eval_property_access(ast, stack, execution);
     break;
-  default: { R = ast; }
+  default: {
+    R = ast;
+  }
   }
 
   if (R->is_result) {
@@ -334,6 +347,7 @@ JSAST *js_eval_function(JSAST *ast, map_T *stack, JSExecution *execution) {
 
   if (ast->value_str == 0)
     return ast;
+
   /*  for (uint32_t i = 0; i < ast->args->size; i++) {
       JSAST* arg = (JSAST*)ast->args->items[i];
       if (arg == 0) continue;
@@ -349,10 +363,36 @@ JSAST *js_eval_function(JSAST *ast, map_T *stack, JSExecution *execution) {
     }*/
 
   js_export_symbol(ast->value_str, ast, stack, execution);
+  // if (js_is_dry(stack, execution) == 0) {
+  map_set(stack, ast->value_str, ast);
+  //}
 
-  if (js_is_dry(stack, execution) == 0) {
-    map_set(stack, ast->value_str, ast);
-  }
+  // if (ast->body != 0) {
+  //  return js_eval(ast->body, stack, execution);
+  //}
+
+  return ast;
+}
+
+JSAST *js_eval_class(JSAST *ast, map_T *stack, JSExecution *execution) {
+  /*  for (uint32_t i = 0; i < ast->args->size; i++) {
+      JSAST* arg = (JSAST*)ast->args->items[i];
+      if (arg == 0) continue;
+      if (arg->value_str == 0) continue;
+      map_bucket_T* b = map_get(stack, arg->value_str);
+
+      if (b == 0) {
+        map_set(stack, arg->value_str, init_js_ast_result(JS_AST_UNDEFINED));
+      }
+    }
+    for (uint32_t i = 0; i < ast->args->size; i++) {
+      ast->args->items[i] = js_eval(ast->args->items[i], stack, execution);
+    }*/
+
+  js_export_symbol(ast->value_str, ast, stack, execution);
+  // if (js_is_dry(stack, execution) == 0) {
+  map_set(stack, ast->value_str, ast);
+  //}
 
   // if (ast->body != 0) {
   //  return js_eval(ast->body, stack, execution);
@@ -462,7 +502,8 @@ JSAST *js_eval_construct(JSAST *ast, map_T *stack, JSExecution *execution) {
   assert(caller != 0);
   assert(caller->type == JS_AST_CALL);
   assert(right != 0);
-  assert(right->fptr != 0 || right->type == JS_AST_FUNCTION);
+  assert(right->fptr != 0 || right->type == JS_AST_FUNCTION ||
+         right->type == JS_AST_CLASS);
   JSAST *construct = js_ast_get_constructor(right);
 
   if (construct != 0) {
@@ -514,7 +555,8 @@ JSAST *js_eval_try(JSAST *ast, map_T *stack, JSExecution *execution) {
 JSAST *js_eval_catch(JSAST *ast, map_T *stack, JSExecution *execution) {}
 
 JSAST *js_eval_definition(JSAST *ast, map_T *stack, JSExecution *execution) {
-  if (ast->right && ast->right->type == JS_AST_FUNCTION) {
+  if (ast->right && (ast->right->type == JS_AST_FUNCTION ||
+                     ast->right->type == JS_AST_ARROW_FUNCTION)) {
     ast->right->value_str =
         ast->left && ast->left->value_str ? strdup(ast->left->value_str) : 0;
   }
@@ -562,14 +604,17 @@ JSAST *js_eval_assignment(JSAST *ast, map_T *stack, JSExecution *execution) {
   case TOKEN_EQUALS: {
     left->value_int = right->value_int;
     left->value_num = right->value_num;
+    left->value_double = right->value_double;
   } break;
   case TOKEN_MINUS_EQUALS: {
     left->value_int -= right->value_int;
     left->value_num -= right->value_num;
+    left->value_double -= right->value_double;
   } break;
   case TOKEN_PLUS_EQUALS: {
     left->value_int += right->value_int;
     left->value_num += right->value_num;
+    left->value_double += right->value_double;
   } break;
   default: {
     printf("Error: %s\n", js_token_type_to_str(ast->token_type));

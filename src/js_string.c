@@ -40,3 +40,22 @@ char *js_str_join(char *paths[], size_t n, const char *delim) {
 
   return str;
 }
+
+void js_str_trim_last(char **str) {
+  char *s = *str;
+  uint32_t length = strlen(s);
+  if (!length)
+    return;
+
+  uint32_t count = 0;
+  for (uint32_t i = length - 1; i > 0; i--) {
+    char c = s[i];
+    if (c != '\t' && c != '\n' && c != ' ')
+      break;
+    count++;
+  }
+
+  memset(&s[length - count], 0, count * sizeof(char));
+
+  *str = s;
+}

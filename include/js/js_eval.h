@@ -27,6 +27,9 @@ JSAST *js_eval_assign(JSAST *ast, map_T *stack,
                       struct JS_EXECUTION_STRUCT *execution);
 JSAST *js_eval_function(JSAST *ast, map_T *stack,
                         struct JS_EXECUTION_STRUCT *execution);
+JSAST *js_eval_class(JSAST *ast, map_T *stack,
+                     struct JS_EXECUTION_STRUCT *execution);
+
 JSAST *js_eval_import(JSAST *ast, map_T *stack,
                       struct JS_EXECUTION_STRUCT *execution);
 JSAST *js_eval_if(JSAST *ast, map_T *stack,

@@ -55,7 +55,7 @@ char* js_f_asm32_entry(const char* filename) {
 
 
 char* js_f_asm32_compound(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution) {
-  return list_map_str(ast->children, js_f_asm32, stack, stacklist, execution);
+  return list_map_str(ast->children, (ListMapStrFunc)js_f_asm32, stack, stacklist, execution);
 }
 
 char* js_f_asm32_function(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execution) {
@@ -128,6 +128,7 @@ char* js_f_asm32(JSAST* ast, map_T* stack, list_T* stacklist, JSExecution* execu
     case JS_AST_FUNCTION: return EMIT(function, ast); break;
     case JS_AST_NUMBER: return EMIT(number, ast); break;
     case JS_AST_DEFINITION: return EMIT(definition, ast); break;
+    default: return strdup(""); break;
   }
   return strdup("");
 }

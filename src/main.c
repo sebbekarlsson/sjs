@@ -27,6 +27,14 @@ static int interactive() {
 
 int main(int argc, char *argv[]) {
 
+  // char* s = strdup("hello   world   \n\t   \t esadf1");
+
+  //  js_str_trim_last(&s);
+
+  // printf("%s\n", s);
+
+  // return 0;
+
   if (argc == 1)
     return interactive();
 

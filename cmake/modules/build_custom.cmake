@@ -65,4 +65,26 @@ function (generate_files)
       add_dependencies(${target} MAKE_${barename}_${target})
     endforeach()
   endforeach()
+
+  file(GLOB js_templates ${CMAKE_CURRENT_SOURCE_DIR}/src/frontend/js/templates/*.js)
+  set(TARGETZ "sjs;sjs_static;sjs_shared")
+
+
+  set(GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
+   add_custom_command(OUTPUT ${GEN_DIR}
+    COMMAND mkdir -p ${GEN_DIR}
+  )
+
+  foreach (js_template ${js_templates})
+    get_filename_component(barename ${js_template} NAME)
+    set(outfile ${CMAKE_CURRENT_BINARY_DIR}/generated/${barename}.h)
+    foreach(target ${TARGETZ})
+      add_custom_command(OUTPUT ${outfile}
+        COMMAND hdr ${js_template} ${barename} > ${outfile}
+        DEPENDS ${GEN_DIR}
+        )
+      add_custom_target(MAKE_${barename}_${target} ALL DEPENDS ${outfile})
+      add_dependencies(${target} MAKE_${barename}_${target})
+    endforeach()
+  endforeach()
 endfunction()

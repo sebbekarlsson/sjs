@@ -23,6 +23,7 @@ typedef struct JS_AST_STRUCT {
   struct JS_AST_STRUCT *accessed;
   struct JS_AST_STRUCT *constructor;
   float value_num;
+  double value_double;
   int value_int;
   uint32_t *value_int_ptr;
   size_t *value_int_size_ptr;
@@ -84,5 +85,8 @@ int js_ast_get_int(JSAST *ast);
 
 void js_ast_set_int(JSAST *ast, int value);
 void js_ast_set_float(JSAST *ast, float value);
+void js_ast_set_double(JSAST *ast, double value);
+
+JSAST *js_ast_query(JSAST *ast, JSASTType type);
 
 #endif
