@@ -7,6 +7,9 @@
 #include <js/js_token.h>
 #include <stdint.h>
 
+
+#define DUMP_AST(ast) { printf("%s(%s)\n", JS_AST_TYPE_STR[ast->type], js_ast_to_string(ast)); }
+
 struct JS_EXECUTION_STRUCT;
 
 typedef void *(*JSFunction(void *ptr, list_T *args, map_T *stack,
@@ -40,6 +43,7 @@ typedef struct JS_AST_STRUCT {
   unsigned int is_true;
   unsigned int exported;
   unsigned int marked;
+  unsigned int emitted;
 } JSAST;
 
 typedef struct JS_AST_TUPLE_STRUCT {
@@ -88,5 +92,9 @@ void js_ast_set_float(JSAST *ast, float value);
 void js_ast_set_double(JSAST *ast, double value);
 
 JSAST *js_ast_query(JSAST *ast, JSASTType type);
+
+unsigned int js_ast_is_function(JSAST* ast);
+
+
 
 #endif

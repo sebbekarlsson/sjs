@@ -108,6 +108,7 @@
     "astEnums": [
         "JS_AST_COMPOUND",
         "JS_AST_FUNCTION",
+        "JS_AST_CLASS_FUNCTION",
         "JS_AST_CLASS",
         "JS_AST_ARROW_FUNCTION",
         "JS_AST_ID",

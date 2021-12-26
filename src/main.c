@@ -39,10 +39,10 @@ int main(int argc, char *argv[]) {
     return interactive();
 
   int pos = 0;
-  char **emit_arg = find_arg(argc, argv, &pos, "-e");
+  char *emit_arg = get_arg(argc, argv, "-e");
 
   if (emit_arg != 0)
-    return emit(argv[1], argc - pos, emit_arg);
+    return emit(argv[1], argc, argv);
   JSExecution execution = {emit_arg == 0 ? 1 : 0};
   js_execute_file(argv[1], &execution);
 

@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <js/builtins/array.h>
 #include <js/builtins/string.h>
+#include <js/stack_pointers.h>
 #include <js/js.h>
 #include <js/js_AST.h>
 #include <js/js_gc.h>
@@ -25,6 +26,9 @@ JSAST *js_ast_constructor(JSAST *ast, JSASTType type) {
   } break;
   case JS_AST_STRING: {
     map_set(ast->keyvalue, "prototype", init_js_builtin_string_prototype(ast));
+  } break;
+  case JS_AST_CLASS: {
+    map_set(ast->keyvalue, "prototype", init_js_ast(JS_AST_OBJECT));
   } break;
   default: {
     // noop
@@ -381,7 +385,7 @@ char *js_ast_to_string(JSAST *ast) {
   case JS_AST_OBJECT:
     return js_ast_object_to_string(ast);
     break;
-  case JS_AST_FUNCTION:
+  case JS_AST_FUNCTION: case JS_AST_CLASS_FUNCTION:
     return js_ast_function_to_string(ast);
     break;
   case JS_AST_BINOP:
@@ -632,4 +636,8 @@ JSAST *js_ast_query(JSAST *ast, JSASTType type) {
   }
 
   return 0;
+}
+
+unsigned int js_ast_is_function(JSAST* ast) {
+  return ast->type == JS_AST_FUNCTION || ast->type == JS_AST_ARROW_FUNCTION || ast->type == JS_AST_CLASS_FUNCTION || ast->fptr != 0;
 }

@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <js/js.h>
 #include <js/js_parser.h>
 #include <js/macros.h>
@@ -50,7 +51,7 @@ JSParser *init_js_parser(JSLexer *lexer, JSExecution *execution) {
 
 void js_parser_free(JSParser *parser) {
   if (parser == 0)
-    return 0;
+    return;
   if (parser->token != 0) {
     js_token_free(parser->token);
     parser->token = 0;
@@ -149,6 +150,27 @@ JSAST *js_parser_parse_function(JSParser *parser) {
   return ast;
 }
 
+JSAST *js_parser_parse_class_function(JSParser *parser) {
+  JSAST *ast = init_js_ast(JS_AST_CLASS_FUNCTION);
+  MARK(ast);
+  ast->value_str = strdup(parser->token->value);
+  js_parser_eat(parser, TOKEN_ID);
+
+  js_parser_eat(parser, TOKEN_LPAREN);
+  if (parser->token->type != TOKEN_RPAREN) {
+    js_parser_parse_multiple(parser, ast->args, TOKEN_COMMA);
+  }
+  js_parser_eat(parser, TOKEN_RPAREN);
+
+  js_parser_eat(parser, TOKEN_LBRACE);
+  if (parser->token->type != TOKEN_RBRACE) {
+    ast->body = js_parser_parse_body(parser);
+  }
+  js_parser_eat(parser, TOKEN_RBRACE);
+
+  return ast;
+}
+
 JSAST *js_parser_parse_class(JSParser *parser) {
 
   JSAST *ast = init_js_ast(JS_AST_CLASS);
@@ -166,7 +188,7 @@ JSAST *js_parser_parse_class(JSParser *parser) {
     return ast;
 
   js_parser_eat(parser, TOKEN_LBRACE);
-  ast->body = js_parser_parse_body(parser);
+  ast->body = js_parser_parse_class_body(parser, ast);
   js_parser_eat(parser, TOKEN_RBRACE);
 
   return ast;
@@ -806,6 +828,60 @@ JSAST *js_parser_parse_body(JSParser *parser) {
       list_push(ast->children, js_parser_parse_statement(parser));
     } else {
       list_push(ast->children, js_parser_parse_expr(parser));
+    }
+  }
+
+  return ast;
+}
+
+JSAST *js_parser_parse_class_body(JSParser *parser, JSAST *parent) {
+  JSAST *ast = init_js_ast(JS_AST_COMPOUND);
+  MARK(ast);
+  if (parser->token->type == TOKEN_RBRACE)
+    return ast;
+
+  if (should_parse_statement(parser)) {
+    JSAST *child = js_parser_parse_statement(parser);
+    if (child->value_str) {
+      JSAST *proto = js_ast_get_prototype(parent);
+      assert(proto != 0);
+      map_set(proto->keyvalue, child->value_str, child);
+    }
+    list_push(ast->children, child);
+  } else {
+    JSAST *child = js_parser_parse_class_function(parser);
+    if (child->value_str) {
+      JSAST *proto = js_ast_get_prototype(parent);
+      assert(proto != 0);
+      map_set(proto->keyvalue, child->value_str, child);
+    }
+    list_push(ast->children, child);
+  }
+
+  while (parser->token->type != TOKEN_RBRACE) {
+
+    if (parser->token->type == TOKEN_SEMI)
+      js_parser_eat(parser, TOKEN_SEMI);
+
+    if (parser->token->type == TOKEN_RBRACE)
+      return ast;
+
+    if (should_parse_statement(parser)) {
+      JSAST *child = js_parser_parse_statement(parser);
+      if (child->value_str) {
+        JSAST *proto = js_ast_get_prototype(parent);
+        assert(proto != 0);
+        map_set(proto->keyvalue, child->value_str, child);
+      }
+      list_push(ast->children, child);
+    } else {
+      JSAST *child = js_parser_parse_class_function(parser);
+      if (child->value_str) {
+        JSAST *proto = js_ast_get_prototype(parent);
+        assert(proto != 0);
+        map_set(proto->keyvalue, child->value_str, child);
+      }
+      list_push(ast->children, child);
     }
   }
 

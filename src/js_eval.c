@@ -3,6 +3,7 @@
 #include <js/js_eval.h>
 #include <js/js_path.h>
 #include <js/macros.h>
+#include <js/stack_pointers.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -176,6 +177,7 @@ JSAST *js_eval(JSAST *ast, map_T *stack, JSExecution *execution) {
     break;
   case JS_AST_FUNCTION:
   case JS_AST_ARROW_FUNCTION:
+  case JS_AST_CLASS_FUNCTION:
     R = js_eval_function(ast, stack, execution);
     break;
   case JS_AST_CLASS:
@@ -292,6 +294,7 @@ JSAST *js_eval_call(JSAST *ast, map_T *stack, JSExecution *execution) {
 
   JSAST *self = left->accessed ? left->accessed : left;
 
+
   JSAST *res = 0;
   if (map_get(stack, STACK_ADDR_CONSTRUCT_FLAG) != 0) {
     map_set(stack, STACK_ADDR_CONSTRUCT_CALLER, ast);
@@ -305,15 +308,17 @@ JSAST *js_eval_call(JSAST *ast, map_T *stack, JSExecution *execution) {
     }
   }
 
-  if (left->fptr == 0 && left->type != JS_AST_FUNCTION) {
+  if (left->fptr == 0 && (left->type != JS_AST_FUNCTION && left->type != JS_AST_ARROW_FUNCTION && left->type != JS_AST_CLASS_FUNCTION)) {
     printf("Error: %s is not a function.\n", js_ast_to_string(ast));
     return ast;
   }
 
+
+
   if (left->fptr != 0) {
     res = js_call_function(self, 0, left->fptr, ast->args, left->args, stack,
                            execution);
-  } else if (left->type == JS_AST_FUNCTION) {
+  } else if (js_ast_is_function(left)) {
     res = js_call_function(self, left, 0, ast->args, left->args, stack,
                            execution);
   }
@@ -348,6 +353,8 @@ JSAST *js_eval_function(JSAST *ast, map_T *stack, JSExecution *execution) {
   if (ast->value_str == 0)
     return ast;
 
+
+
   /*  for (uint32_t i = 0; i < ast->args->size; i++) {
       JSAST* arg = (JSAST*)ast->args->items[i];
       if (arg == 0) continue;
@@ -375,6 +382,7 @@ JSAST *js_eval_function(JSAST *ast, map_T *stack, JSExecution *execution) {
 }
 
 JSAST *js_eval_class(JSAST *ast, map_T *stack, JSExecution *execution) {
+
   /*  for (uint32_t i = 0; i < ast->args->size; i++) {
       JSAST* arg = (JSAST*)ast->args->items[i];
       if (arg == 0) continue;
@@ -394,9 +402,26 @@ JSAST *js_eval_class(JSAST *ast, map_T *stack, JSExecution *execution) {
   map_set(stack, ast->value_str, ast);
   //}
 
-  // if (ast->body != 0) {
-  //  return js_eval(ast->body, stack, execution);
-  //}
+  JSAST* proto = js_ast_get_prototype(ast);
+  assert(proto != 0);
+
+  if (ast->body != 0 && ast->body->children != 0) {
+    for (uint32_t i = 0; i < ast->body->children->size; i++) {
+      JSAST* child = ast->body->children->items[i];
+      assert(child != 0);
+
+      if (child->type == JS_AST_CLASS_FUNCTION) {
+        assert(child->value_str != 0);
+        map_set(proto->keyvalue, child->value_str, child);
+      }
+      else if (child->type == JS_AST_DEFINITION) {
+        assert(child->left != 0);
+        assert(child->left->value_str != 0);
+        map_set(proto->keyvalue, child->left->value_str, child);
+      }
+    }
+  }
+
 
   return ast;
 }
@@ -506,11 +531,23 @@ JSAST *js_eval_construct(JSAST *ast, map_T *stack, JSExecution *execution) {
          right->type == JS_AST_CLASS);
   JSAST *construct = js_ast_get_constructor(right);
 
+
+  JSAST* self = 0;
+
+  if (right->type == JS_AST_CLASS) {
+    self = js_ast_get_prototype(right);
+
+    if (self != 0) {
+      JSAST* clazz = right;
+      map_set(self->keyvalue, "class", clazz);
+    }
+  }
+
   if (construct != 0) {
     right = construct;
   }
 
-  JSAST *self = init_js_ast_result(JS_AST_OBJECT);
+  self = OR(self, init_js_ast_result(JS_AST_OBJECT));
   MARK(self);
   map_set(stack, STACK_ADDR_THIS, self);
   js_call_function(self, right, right->fptr, caller->args, right->args, stack,
@@ -881,12 +918,14 @@ JSAST *js_eval_unop(JSAST *ast, map_T *stack, JSExecution *execution) {
 }
 
 JSAST *js_eval_id(JSAST *ast, map_T *stack, JSExecution *execution) {
+
   if (ast->value_str == 0) {
     printf("Error: ID has no str value.\n");
     exit(1);
   };
   JSAST *value = (JSAST *)map_get_value(stack, ast->value_str);
   map_bucket_T *b = map_get(stack, ast->value_str);
+
   if (value == 0 || b == 0) {
     printf("Undefined variable `%s`\n", ast->value_str);
     exit(1);

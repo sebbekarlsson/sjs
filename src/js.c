@@ -23,6 +23,14 @@ void js_execute_file(const char *filepath, JSExecution *execution) {
     ex.gc = init_js_gc();
   }
 
+  if (ex.lazy == 0) {
+    ex.lazy = init_list(sizeof(JSAST*));
+  }
+
+  if (ex.lazy_str == 0) {
+    ex.lazy_str = init_list(sizeof(char*));
+  }
+
   *execution = ex;
   return js_execute_str(contents, execution);
 }
@@ -44,6 +52,15 @@ void js_execute_str(char *str, JSExecution *execution) {
     frame = setup_js_frame(execution);
     ex.frame = frame;
   }
+
+  if (ex.lazy == 0) {
+    ex.lazy = init_list(sizeof(JSAST*));
+  }
+
+  if (ex.lazy_str == 0) {
+    ex.lazy_str = init_list(sizeof(char*));
+  }
+
   ex.lexer = lexer;
   ex.root = root;
   ex.parser = parser;
@@ -124,6 +141,7 @@ JSAST *js_get_exports(JSAST *modul) {
 }
 
 JSEmitType js_string_to_emit_type(const char *str) {
+  if (!str) return JS_EMIT_JS;
   if (strcmp(str, "asm32") == 0)
     return JS_EMIT_ASM32;
   if (strcmp(str, "asm64") == 0)
@@ -134,6 +152,5 @@ JSEmitType js_string_to_emit_type(const char *str) {
     return JS_EMIT_JS;
   if (strcmp(str, "none") == 0)
     return JS_EMIT_NONE;
-  fprintf(stderr, "Unknown emit type %s\n", str);
   return JS_EMIT_NONE;
 }
