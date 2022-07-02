@@ -213,6 +213,7 @@ char* js_f_asm32(JSAST* ast, map_T* stack, list_T* stacklist, struct JS_EXECUTIO
     case JS_AST_NUMBER: return EMIT(number, ast); break;
     case JS_AST_DEFINITION: return EMIT(definition, ast); break;
     case JS_AST_RETURN: return EMIT(ret, ast); break;
+    default: {  return strdup(""); } break;
   }
   return strdup("");
 }

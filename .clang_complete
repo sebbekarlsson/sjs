@@ -1,0 +1,10 @@
+-I/usr/local/include
+-I/usr/include
+-I./build/_deps/hashmap_static-src/include
+-I./build/_deps/date_static-src/include
+-I./build/_deps/fjson_static-src/include
+-I./build/_deps/html_static-src/include
+-I./build/_deps/css_static-src/include
+-I./build/_deps/ass_static-src/include
+-I./build/generated
+-I./include

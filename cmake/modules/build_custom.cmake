@@ -1,5 +1,7 @@
 include(FetchContent)
+include(sjs_deps)
 
+set(GPP_BIN_PATH ${CMAKE_CURRENT_BINARY_DIR}/gpp_e)
 
 function(build_custom TARGETZ NAME CMD DEPENDS OUT)
   separate_arguments(EX UNIX_COMMAND PROGRAM SEPARATE_ARGS ${CMD})
@@ -9,20 +11,14 @@ function(build_custom TARGETZ NAME CMD DEPENDS OUT)
       COMMAND ${EX}
       )
     add_custom_target(MAKE_${NAME}_${target} ALL DEPENDS ${OUT})
+    sjs_init_deps(MAKE_${NAME}_${target} GPP_BIN_PATH)
     add_dependencies(${target} MAKE_${NAME}_${target})
   endforeach()
 endfunction()
 
 
 function (generate_files)
-  FetchContent_Declare(
-    gpp
-    GIT_REPOSITORY https://github.com/sebbekarlsson/gpp.git
-    )
-  FetchContent_MakeAvailable(gpp)
-
   file(COPY ${sjs_SOURCE_DIR}/context.json DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
-
 
   file(GLOB js_builtins ${CMAKE_CURRENT_SOURCE_DIR}/src/builtins/*.gpp)
   file(GLOB js_builtin_functions ${CMAKE_CURRENT_SOURCE_DIR}/src/builtins/functions/*.gpp)
@@ -35,7 +31,7 @@ function (generate_files)
     build_custom(
       "sjs;sjs_static;sjs_shared"
       ${barename}
-      "mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/generated && gpp ${gpp_file} > ${outfile}"
+      "mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/generated && ${GPP_BIN_PATH} ${gpp_file} > ${outfile}"
       ${CMAKE_CURRENT_SOURCE_DIR}/src/builtins/${gpp_file}
       ${outfile}
       )

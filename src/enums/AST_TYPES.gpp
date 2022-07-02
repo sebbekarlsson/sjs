@@ -1,3 +1,6 @@
+#ifndef JS_AST_TYPES_H
+#define JS_AST_TYPES_H
+
 typedef enum JS_AST_TYPE
 {
   {{
@@ -15,3 +18,4 @@ static const char * JS_AST_TYPE_STR[] = {
     @)), ",")
   }}
 };
+#endif

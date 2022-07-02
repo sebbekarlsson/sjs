@@ -276,7 +276,7 @@ char *list_join(list_T *list, const char *delim) {
       continue;
     js_str_append(&str, value);
 
-    if (i < list->size - 1) {
+    if (i < list->size - 1 && delim) {
       js_str_append(&str, (char *)delim);
     }
   }

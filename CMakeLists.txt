@@ -2,11 +2,12 @@ cmake_minimum_required(VERSION 3.20)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 include(build_custom)
+include(sjs_deps)
 
 project(sjs)
 
 
-add_subdirectory(tests)
+#add_subdirectory(tests)
 
 file(GLOB PUBLIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
 file(GLOB sjs_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c ${CMAKE_CURRENT_SOURCE_DIR}/src/**/*.c ${CMAKE_CURRENT_SOURCE_DIR}/src/**/**/*.c)
@@ -73,7 +74,14 @@ FetchContent_MakeAvailable(hashmap_static)
 
 
 
+sjs_init_deps(sjs GPP_BIN_PATH)
+sjs_init_deps(sjs_shared GPP_BIN_PATH)
+sjs_init_deps(sjs_static GPP_BIN_PATH)
+
+
 generate_files()
+
+
 
 target_link_libraries(sjs PUBLIC hashmap_static m)
 target_link_libraries(sjs_shared PUBLIC hashmap_static m)

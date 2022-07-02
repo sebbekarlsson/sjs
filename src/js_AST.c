@@ -569,4 +569,9 @@ void js_ast_set_float(JSAST *ast, float value) {
     return;
   ast->value_num = value;
   ast->value_int = (int)value;
+
+}
+
+const char* js_ast_type_to_string(JSASTType type) {
+  return JS_AST_TYPE_STR[type];
 }

@@ -19,7 +19,12 @@
   }
 
 char *js_dirname(map_T *stack) {
+  if (!stack) return 0;
   JSAST *stringast = (JSAST *)map_get_value(stack, "__dirname");
+  if (!stringast) return strdup("./");
+  if (!stringast->value_str_ptr) return strdup("./");
+  if (stringast->value_str) return stringast->value_str;
+  if (!*stringast->value_str_ptr) return strdup("./");
   return strdup(*stringast->value_str_ptr);
 }
 
@@ -48,10 +53,10 @@ unsigned int js_is_empty(JSAST *ast) {
 void stack_pop(map_T *stack, const char *key) {
   if (key == 0)
     return;
-  JSAST *ast = (JSAST *)map_get_value(stack, key);
+  JSAST *ast = (JSAST *)map_get_value(stack, (char*)key);
   if (ast == 0)
     return;
-  map_unset(stack, key);
+  map_unset(stack, (char*)key);
   // js_ast_maybe_free(ast);
 }
 
@@ -434,8 +439,7 @@ JSAST *js_eval_if(JSAST *ast, map_T *stack, JSExecution *execution) {
 }
 
 JSAST *js_eval_while(JSAST *ast, map_T *stack, JSExecution *execution) {
-  while (js_is_true(js_eval(ast->expr, stack, execution)) && ast->body != 0,
-         execution) {
+  while (js_is_true(js_eval(ast->expr, stack, execution)) && ast->body != 0) {
     js_eval(ast->body, stack, execution);
   }
 
@@ -526,7 +530,7 @@ JSAST *js_eval_definition(JSAST *ast, map_T *stack, JSExecution *execution) {
 
   JSAST *value = js_eval(ast->right, stack, execution);
 
-  JSAST *existing = (JSAST *)map_get_value(stack, ast->left->value_str);
+  //JSAST *existing = (JSAST *)map_get_value(stack, ast->left->value_str);
 
   stack_pop(stack, ast->left->value_str);
   map_set(stack, ast->left->value_str, value);
@@ -756,7 +760,7 @@ JSAST *js_eval_property_access(JSAST *ast, map_T *stack,
   if (left->type == JS_AST_OBJECT)
     return js_eval_dot(ast, stack, execution);
 
-  JSAST *right = ast->right;
+//  JSAST *right = ast->right;
   if (left->type == JS_AST_UNDEFINED) {
     printf("Error: `%s` is undefined.\n", left->value_str);
     exit(1);
@@ -777,7 +781,7 @@ JSAST *js_eval_property_access(JSAST *ast, map_T *stack,
   MARK(result);
 
   if (ast->right) {
-    right = js_eval(ast->right, stack, execution);
+    /*right = */js_eval(ast->right, stack, execution);
   }
 
   result = result ? result : init_js_ast_result(JS_AST_UNDEFINED);
@@ -848,8 +852,7 @@ JSAST *js_eval_id(JSAST *ast, map_T *stack, JSExecution *execution) {
   JSAST *value = (JSAST *)map_get_value(stack, ast->value_str);
   map_bucket_T *b = map_get(stack, ast->value_str);
   if (value == 0 || b == 0) {
-    printf("Undefined variable `%s`\n", ast->value_str);
-    exit(1);
+    return ast;
   }
 
   return js_eval(value, stack, execution);

@@ -47,6 +47,8 @@ typedef struct JS_AST_TUPLE_STRUCT {
   JSAST *y;
 } JSASTTuple;
 
+const char* js_ast_type_to_string(JSASTType type);
+
 JSAST *init_js_ast(JSASTType type);
 
 JSAST *js_ast_copy(JSAST *src);

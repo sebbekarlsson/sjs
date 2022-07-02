@@ -1,3 +1,5 @@
+#ifndef JS_TOKEN_TYPES_H
+#define JS_TOKEN_TYPES_H
 typedef enum JS_TOKEN_TYPE
 {
   {{
@@ -15,3 +17,4 @@ static const char * JS_TOKEN_TYPE_STR[] = {
     @)), ",")
   }}
 };
+#endif

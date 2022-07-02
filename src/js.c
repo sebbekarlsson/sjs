@@ -16,7 +16,7 @@ void js_execute_file(const char *filepath, JSExecution *execution) {
   JSExecution ex = *execution;
   ex.cwd = get_working_directory();
   ex.__filename = strdup(filepath);
-  ex.__dirname = path_dirname(filepath);
+  ex.__dirname = path_dirname(ex.__filename);
   ex.contents = contents;
 
   if (ex.gc == 0) {
